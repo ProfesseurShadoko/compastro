@@ -1,0 +1,35 @@
+# Compiler and flags
+CXX := g++
+CXXFLAGS := -Wall -O2 -I/usr/include/eigen3             # Add optimization and warnings
+
+# Library dependencies
+FFTW_LIB := -lfftw3 -lm
+
+# Project structure
+SRC_DIR := src
+BUILD_DIR := build
+
+# Collect all .cpp files in the src directory
+SOURCES := $(wildcard $(SRC_DIR)/*.cpp)
+
+# The target executable
+TARGET := $(BUILD_DIR)/output.exe
+
+# Default target: compile and run
+all: $(TARGET) run
+
+# Link the object files to create the executable
+$(TARGET): $(SOURCES)
+	@mkdir -p $(BUILD_DIR)
+	@echo "Compiling and linking into $(TARGET)..."
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SOURCES) $(FFTW_LIB)
+
+# Run the program
+run:
+	@echo "Running the program...\n"
+	./$(TARGET)
+
+# Clean build directory
+clean:
+	@echo "Cleaning up..."
+	rm -rf $(BUILD_DIR)

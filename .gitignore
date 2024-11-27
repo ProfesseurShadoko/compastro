@@ -1,0 +1,8 @@
+# ignore content of the build directory
+build/
+
+# ignore the files
+files/
+
+# ignore trash directory
+trash/
