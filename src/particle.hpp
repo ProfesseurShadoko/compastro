@@ -2,6 +2,7 @@
 #pragma once
 #include <Eigen/Dense>
 #include <vector>
+#include <initializer_list>
 
 enum class IntegrationMethod {
     euler,
@@ -20,6 +21,11 @@ class Particle {
     Particle();
     Particle(Eigen::Vector3d position, Eigen::Vector3d velocity, double mass);
     Particle(const Particle& p);
+
+    /**
+     * Initialize particle by giving position only. Other quantities are set to zero (1 for mass).
+     */
+    Particle(std::initializer_list<double> init);
 
     /**
      * @brief Apply a force to the particle. Updates the acceleration, with the formula F = ma.
@@ -57,6 +63,8 @@ class ParticleSet {
      */
     ParticleSet(std::vector<Particle> particles);
 
+    ParticleSet(std::initializer_list<Particle> init);
+
     /**
      * Calls the applyForce method for each particle in the set.
      */
@@ -77,6 +85,8 @@ class ParticleSet {
      */
     void add(Particle p);
 
+
+
     /**
      * @brief Add a particle set to the set. Particles are copied! This is important when you store a trajectory.
      */
@@ -86,6 +96,11 @@ class ParticleSet {
      * @brief Add a vector of particles to the set. Particles are copied! This is important when you store a trajectory.
      */
     void add(std::vector<Particle> ps);
+
+    /**
+     * @brief Add particles to the set. Particles are copied! This is important when you store a trajectory.
+     */
+    void add(std::initializer_list<Particle> init);
 
     /**
      * Access a particle by index. Allows in place modification.

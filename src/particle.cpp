@@ -31,6 +31,17 @@ Particle::Particle(const Particle& p) {
     this->mass = p.mass;
 }
 
+Particle::Particle(std::initializer_list<double> init) {
+    if (init.size() != 3) {
+        throw std::runtime_error("Initializer list must have 3 elements.");
+    }
+    this->position = Eigen::Vector3d(*(init.begin()), *(init.begin() + 1), *(init.begin() + 2));
+    this->velocity = Eigen::Vector3d(0, 0, 0);
+    this->acceleration = Eigen::Vector3d(0, 0, 0);
+    this->mass = 1;
+}
+
+
 void Particle::applyForce(Eigen::Vector3d force) {
     Eigen::Vector3d f = force / mass;
     acceleration += f;
@@ -87,6 +98,11 @@ ParticleSet::ParticleSet(std::vector<Particle> particles) {
     this->particles = particles; // here a copy is made
 }
 
+ParticleSet::ParticleSet(std::initializer_list<Particle> init) {
+    this->particles = std::vector<Particle>(init);
+}
+
+
 Particle& ParticleSet::get(int i) {
     return particles[i];
 }
@@ -104,6 +120,12 @@ void ParticleSet::add(ParticleSet ps) {
 void ParticleSet::add(std::vector<Particle> ps) {
     for (size_t i = 0; i < ps.size(); i++) {
         add(ps[i]);
+    }
+}
+
+void ParticleSet::add(std::initializer_list<Particle> init) {
+    for (auto p : init) {
+        add(p);
     }
 }
 
@@ -136,9 +158,9 @@ void ParticleSet::update(double dt, IntegrationMethod method) {
 }
 
 
-ParticleSet ParticleSet::load(std::string filename) {
+ParticleSet ParticleSet::load(std::string path) {
     ParticleSet particles = ParticleSet();
-    std::ifstream file(filename);
+    std::ifstream file(path);
     if (!file.is_open()) {
         throw std::runtime_error("Could not open file.");
     }
@@ -154,8 +176,8 @@ ParticleSet ParticleSet::load(std::string filename) {
     return particles;
 }
 
-void ParticleSet::save(std::string filename, ParticleSet particles) {
-    std::ofstream file(filename);
+void ParticleSet::save(std::string path, ParticleSet particles) {
+    std::ofstream file(path);
     if (!file.is_open()) {
         throw std::runtime_error("Could not open file.");
     }
@@ -167,8 +189,8 @@ void ParticleSet::save(std::string filename, ParticleSet particles) {
 }
 
 
-void ParticleSet::saveForces(std::string filename, std::vector<Eigen::Vector3d> forces) {
-    std::ofstream file(filename);
+void ParticleSet::saveForces(std::string path, std::vector<Eigen::Vector3d> forces) {
+    std::ofstream file(path);
     if (!file.is_open()) {
         throw std::runtime_error("Could not open file.");
     }
