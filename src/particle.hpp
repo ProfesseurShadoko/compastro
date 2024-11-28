@@ -71,15 +71,17 @@ class ParticleSet {
     ParticleSet(std::initializer_list<Particle> init);
 
     /**
-     * Calls the applyForce method for each particle in the set.
+     * Calls the applyForce method for each particle in the set. Calls resetForces first. This means that new forces erase previous ones.
      */
     void applyForces(std::vector<Eigen::Vector3d> forces);
 
+private:
     /**
      * Calls the resetForce method for each particle in the set.
      */
     void resetForces();
 
+public:
     /**
      * Calls the update method for each particle in the set.
      */
@@ -123,12 +125,12 @@ class ParticleSet {
     static ParticleSet load(std::string filename);
 
     /**
-     * @brief Export the particle set to a file. Follows the same format as the loadFile method.
+     * @brief Export the particle set to a file. The resulting file is a .csv file.
      */
     static void save(std::string filename, ParticleSet ps);
 
     /**
-     * Exports the forces acting on the particles to a file. The indeces will match the ones of the particles!
+     * Exports the forces acting on the particles to a file. The indeces will match the ones of the particles! Resulting file is a .csv file.
      */
     static void saveForces(std::string filename, std::vector<Eigen::Vector3d> forces);
 };
