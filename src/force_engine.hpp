@@ -25,6 +25,11 @@ private:
      */
     std::vector<Eigen::Vector3d> directForce() const;
 
+    /**
+     * Tree code computation of force between particles in O(n log n) (n particles that act on a tree of depth log n)
+     */
+    std::vector<Eigen::Vector3d> treeForce() const;
+
 public:
     ForceEngine(ParticleSet& particles) : particles(particles) {};
 
