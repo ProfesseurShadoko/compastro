@@ -33,6 +33,13 @@ Node::~Node() { // the only important thing is to call delete on everyone => rec
 }
 
 void Node::insert(Particle& particle) {
+    // check whether the particle is in the node
+    if (particle.position.x() <= position.x() - halfWidth || particle.position.x() > position.x() + halfWidth ||
+        particle.position.y() <= position.y() - halfWidth || particle.position.y() > position.y() + halfWidth ||
+        particle.position.z() <= position.z() - halfWidth || particle.position.z() > position.z() + halfWidth) {
+        return;
+    }
+
     // update the center of mass and total mass
     updateMass(particle);
 
