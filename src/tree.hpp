@@ -24,6 +24,12 @@ class Node {
     Node* children[8]; // 8 children nodes
     Particle* particle; // pointer to the particle in the node (must be allowed to be null, thus we need a pointer here!)
 
+    Eigen::Matrix3d quadrupole; // quadrupole moment of the particles in the node
+    /**
+     * reminder on the quadrupol expression:
+     * Q_ij = sum(m_k * (3 * r_k,i * r_k,j - |r_k|^2 * delta_ij)) # r = distance of particle to center of mass
+     */
+
 
     Node(Eigen::Vector3d position, double halfWidth);
 
@@ -82,9 +88,25 @@ private:
     void createChildren();
 
     /**
-     * Updates the center of mass and total mass of the node
+     * # first pass!
+     * Updates the center of mass and total mass of the node.
      */
     void updateMass(Particle& particle);
+
+     /**
+      * # second pass!
+     * Qij = sum(mk[3(s-xk)_i * (s-xk)_j - |s-xk|^2 * delta_ij]) with s the position of the center of mass => you need to have it already computed, thus the necessity of a second pass
+     * 
+     * The second pass will compute all quadrupoles of the nodes in the tree. Let's go step by step in depth:
+     * 1. First quadrupole is computed with all N particles => O(N)
+     * 2. Next 8 quadrupoles are computed with N/8 particles each approx => 8*N/8 = N => O(N)
+     * 3. Next 64 quadrupoles are computed with N/64 particles each approx => 64*N/64 = N => O(N)
+     * 4. ...
+     * log_8(N). Here we stop => in total O(N log N) <3
+     * 
+     * Note: for each specific particle, no issue that the resulting force gets computed with a quadrupole involving that exact particle. Indeed, if we go thrgouh the nodes that contain the specific particle, we will go all the way done to the leaf. Thus, no issue here.
+     */
+    void secondPass();
 };
 
 
@@ -126,6 +148,5 @@ private:
      * Resets the Tree to its initial state
      */
     void clear();
-
 };
 
