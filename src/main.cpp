@@ -5,6 +5,14 @@
 #include <iostream>
 #include "particle.hpp"
 #include "force_engine.hpp"
+#include "tree.hpp"
+
+
+/**
+ * #############
+ * ### UTILS ###
+ * #############
+ */
 
 int tutoTimer() {
     Timer timer("Summing integers up to 1e6");
@@ -84,6 +92,14 @@ int tutoEigen() {
 }
 
 
+
+
+/**
+ * #####################
+ * ### DIRECR SOLVER ###
+ * #####################
+ */
+
 int testDirectSolver() {
     double m = 1;
     Particle p1(Eigen::Vector3d(0.97, -0.243, 0), Eigen::Vector3d(0.4662, 0.4324, 0), m); // these are values for stable 3 body problem
@@ -112,7 +128,6 @@ int testDirectSolver() {
 }
 
 
-
 int directSolver() {
     ParticleSet particles = ParticleSet::load("files/data.txt");
     std::cout << "Loaded " << particles.size() << " particles." << std::endl;
@@ -135,6 +150,44 @@ int directSolver() {
     return 0;
 }
 
+
+/**
+ * ##############
+ * ### OCTREE ###
+ * ##############
+ */
+
+int testOctree() {
+    //Particle particle = {1, 1, 0}; // thiw works fine
+    ParticleSet particles = {
+        {0.5, 0, 0},
+        {0.13, 0, 0.25},
+        {-0.44, 0.3, 0.65},
+        {-0.45, 0.32, 0.59}
+    };
+    ParticleSet::save("files/particles_for_test_octree.txt", particles);
+    Message("Set of " + std::to_string(particles.size()) + " particles created and exported!", "#");
+
+    // let's create the tree
+    Octree tree(Eigen::Vector3d(0, 0, 0), 1);
+    tree.insert(particles);
+
+    // let's save the tree
+    Octree::save("files/tree_for_test_octree.csv", tree);
+    Message("Tree created and exported!", "#");
+
+
+    return 0;
+}
+
+
+
+/**
+ * ############
+ * ### MAIN ###
+ * ############
+ */
+
 int main() {
-    return directSolver();
+    return testOctree();
 }
