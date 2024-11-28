@@ -181,6 +181,34 @@ int testOctree() {
 }
 
 
+int dataOctree() {
+    ParticleSet particles = ParticleSet::load("files/data.txt");
+    Octree tree(1);
+    tree.insert(particles);
+    Octree::save("files/tree_data.csv", tree);
+
+    // let's try to retrieve the particles:
+    ParticleSet particles_retrieved = tree.getParticles();
+    particles_retrieved.get(0).display();
+
+    return 0;
+}
+
+
+int forceOctree() {
+    ParticleSet particles = ParticleSet::load("files/data.txt");
+    ForceEngine engine(particles);
+
+    Timer timer("Octree Solver");
+    timer.start();
+    std::vector<Eigen::Vector3d> forces = engine.computeForce(Method::tree); // creates te tree and everything!
+    timer.stop();
+    timer.display();
+
+    ParticleSet::saveForces("files/forces_octree.txt", forces);
+    return 0;
+}
+
 
 /**
  * ############
@@ -189,5 +217,5 @@ int testOctree() {
  */
 
 int main() {
-    return testOctree();
+    return forceOctree();
 }
