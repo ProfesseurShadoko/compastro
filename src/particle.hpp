@@ -106,4 +106,9 @@ class ParticleSet {
      * @brief Export the particle set to a file. Follows the same format as the loadFile method.
      */
     static void save(std::string filename, ParticleSet ps);
+
+    /**
+     * Exports the forces acting on the particles to a file. The indeces will match the ones of the particles!
+     */
+    static void saveForces(std::string filename, std::vector<Eigen::Vector3d> forces);
 };

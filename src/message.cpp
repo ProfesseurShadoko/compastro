@@ -130,9 +130,9 @@ void Timer::display() {
     if (status != "STOPPED") {
         throw std::runtime_error("Timer has not been stopped yet.");
     }
-    int ns_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
-    int ms_time = ns_time / 1e6; // static cast to int
-    int s_time = ns_time / 1e9;
+    long long ns_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
+    long long ms_time = ns_time / 1e6; // static cast to int
+    long long s_time = ns_time / 1e9;
 
     std::string display_name = (name=="DEFAULT" ? "" : "[" + name + "]");
     

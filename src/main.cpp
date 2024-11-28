@@ -84,9 +84,6 @@ int tutoEigen() {
 }
 
 
-
-
-
 int testDirectSolver() {
     double m = 1;
     Particle p1(Eigen::Vector3d(0.97, -0.243, 0), Eigen::Vector3d(0.4662, 0.4324, 0), m); // these are values for stable 3 body problem
@@ -114,8 +111,30 @@ int testDirectSolver() {
     return 0;
 }
 
-int main() {
-    //tutoParticles();
-    testDirectSolver();
+
+
+int directSolver() {
+    ParticleSet particles = ParticleSet::load("files/data.txt");
+    std::cout << "Loaded " << particles.size() << " particles." << std::endl;
+    std::cout << "First Particle:" << std::endl;
+    particles.get(0).display();
+    double eps = 0.001;
+
+    ForceEngine engine(particles);
+    engine.softening = eps;
+
+    
+
+    Timer timer("Direct Solver");
+    timer.start();
+    std::vector<Eigen::Vector3d> forces = engine.computeForce(Method::direct);
+    timer.stop();
+    timer.display();
+
+    ParticleSet::saveForces("files/forces_eps=" + std::to_string(eps) + ".txt", forces);
     return 0;
+}
+
+int main() {
+    return directSolver();
 }

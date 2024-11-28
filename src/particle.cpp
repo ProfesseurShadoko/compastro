@@ -145,8 +145,8 @@ ParticleSet ParticleSet::load(std::string filename) {
 
     // each line contains index, mass, x, y, z, vx, vy, vz, eps, phi // but we do not care about eps and phi
     int index;
-    double mass, x, y, z, vx, vy, vz;
-    while (file >> index >> mass >> x >> y >> z >> vx >> vy >> vz) {
+    double mass, x, y, z, vx, vy, vz, eps, phi;
+    while (file >> index >> mass >> x >> y >> z >> vx >> vy >> vz >> eps >> phi) { // we actually don't care about espilon and phi
         Particle p(Eigen::Vector3d(x, y, z), Eigen::Vector3d(vx, vy, vz), mass);
         particles.add(p);
     }
@@ -163,5 +163,17 @@ void ParticleSet::save(std::string filename, ParticleSet particles) {
     for (int i = 0; i < particles.size(); i++) {
         Particle p = particles.get(i);
         file << i << " " << p.mass << " " << p.position(0) << " " << p.position(1) << " " << p.position(2) << " " << p.velocity(0) << " " << p.velocity(1) << " " << p.velocity(2) << " 0 0" << std::endl;
+    }
+}
+
+
+void ParticleSet::saveForces(std::string filename, std::vector<Eigen::Vector3d> forces) {
+    std::ofstream file(filename);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open file.");
+    }
+
+    for (size_t i = 0; i < forces.size(); i++) {
+        file << i << " " << forces[i](0) << " " << forces[i](1) << " " << forces[i](2) << std::endl;
     }
 }
