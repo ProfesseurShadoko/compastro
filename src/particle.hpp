@@ -42,6 +42,11 @@ class Particle {
      */
     void update(double dt, IntegrationMethod method = IntegrationMethod::euler);
     void display();
+
+    /**
+     * @brief Compute the force between two particles.
+     */
+    static Eigen::Vector3d computeForce(Particle& p1, Particle& p2, double eps = 0);
 };
 
 
