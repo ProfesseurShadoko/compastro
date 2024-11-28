@@ -1,8 +1,12 @@
 
 
+#pragma once 
+
 #include <Eigen/Dense>
 #include <vector>
 #include "particle.hpp"
+#include <string>
+#include <fstream>
 
 
 /**
@@ -41,6 +45,9 @@ class Node {
      */
     void insert(Particle& particle);
 
+    static void save(std::ofstream& file, Node* node);
+
+
 private:
     /**
      * int childIndex = (particle.x > node.center.x) |
@@ -72,12 +79,19 @@ class Octree {
     Node* root;
 
     Octree(Eigen::Vector3d position, double halfWidth);
+    Octree(double halfWidth);
+    ~Octree();
 
     /**
      * Calls *clear()*
      * Inserts a set of particles into the tree.
      */
     void insert(ParticleSet particles);
+
+    /**
+     * Saves recursively the nodes into a csv file
+     */
+    static void save(std::string path, Octree& tree);
 
 private:
     /**

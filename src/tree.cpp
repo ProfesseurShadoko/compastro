@@ -94,6 +94,14 @@ Octree::Octree(Eigen::Vector3d position, double halfWidth) {
     this->root = new Node(position, halfWidth);
 }
 
+Octree::Octree(double halfWidth) {
+    this->root = new Node(Eigen::Vector3d(0, 0, 0), halfWidth);
+}
+
+Octree::~Octree() {
+    delete root;
+}   
+
 void Octree::insert(ParticleSet particles) {
     this->clear(); // useless for the first iteration, necessary after though
     for (int i = 0; i < particles.size(); i++) {
@@ -106,4 +114,30 @@ void Octree::clear() {
     double halfWidth = root->halfWidth;
     delete root;
     root = new Node(position, halfWidth);
+}
+
+
+/**
+ * ##############
+ * ### TO CSV ###
+ * ##############
+ */
+
+void Octree::save(std::string path, Octree& tree) {
+    std::ofstream file(path);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open file.");
+    }
+    // set column names separated by commas (csv format)
+    file << "x,y,z,halfWidth,totalMass,centerOfMass_x,centerOfMass_y,centerOfMass_z" << std::endl;
+    Node::save(file, tree.root);
+}
+
+void Node::save(std::ofstream& file, Node* node) {
+    file << node->position.x() << "," << node->position.y() << "," << node->position.z() << "," << node->halfWidth << "," << node->totalMass << "," << node->centerOfMass.x() << "," << node->centerOfMass.y() << "," << node->centerOfMass.z() << std::endl;
+    if (!node->isLeaf()) {
+        for (int i = 0; i < 8; i++) {
+            Node::save(file, node->children[i]);
+        }
+    }
 }
