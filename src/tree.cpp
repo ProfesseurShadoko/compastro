@@ -47,7 +47,7 @@ void Node::insert(Particle& particle) {
     if (isLeaf()) {
         // if the leaf is empty
         if (this->particle == nullptr) {
-            this->particle = &particle;
+            this->particle = new Particle(particle); // make a copy an allocate memory, we don't want the particle to get erased
         } else {
             // if the leaf is occupied
             Particle* oldParticle = this->particle;
@@ -89,6 +89,35 @@ int Node::childIndex(Particle& particle) {
            ((particle.position.z() > position.z()) << 2);
 }
 
+//                    __
+// force computation (:D)
+//                    \/
+#include <iostream>
+Eigen::Vector3d Node::getForce(Particle& particle, double theta) {
+    
+    // if the node is a leaf
+    if (isLeaf()) {
+        
+        if (this->particle == nullptr || this->particle->position == particle.position) {
+            return Eigen::Vector3d(0, 0, 0); // no force if no particle / a particle doesn't apply a force on itself
+        }
+        return Particle::computeForce(particle, *this->particle); // this is for now first order, we will add quadrupole later
+    }
+
+    // if the node is not a leaf
+    double distance = (centerOfMass - particle.position).norm();
+    if (halfWidth / distance < theta) {
+        Particle pseudoParticle = Particle(centerOfMass, Eigen::Vector3d(0, 0, 0), totalMass);
+        return Particle::computeForce(particle, pseudoParticle);
+    }
+
+    Eigen::Vector3d force(0, 0, 0);
+    for (int i = 0; i < 8; i++) {
+        force += children[i]->getForce(particle, theta);
+    }
+    return force;
+}
+
 
 
 /**
@@ -96,6 +125,9 @@ int Node::childIndex(Particle& particle) {
  * ### OCTREE CLASS ###
  * ####################
  */
+
+double Octree::openingAngle = 0.5; // default value for the opening angle ~ good accuracy here, for faster go to 1.0
+
 
 Octree::Octree(Eigen::Vector3d position, double halfWidth) {
     this->root = new Node(position, halfWidth);
@@ -123,6 +155,15 @@ void Octree::clear() {
     root = new Node(position, halfWidth);
 }
 
+Eigen::Vector3d Octree::getForce(Particle& particle) {
+    return root->getForce(particle, Octree::openingAngle);
+}
+
+
+
+
+
+
 
 /**
  * ##############
@@ -148,3 +189,30 @@ void Node::save(std::ofstream& file, Node* node) {
         }
     }
 }
+
+
+/**
+ * #####################
+ * ### GET PARTICLES ###
+ * #####################
+ */
+
+ParticleSet Octree::getParticles() {
+    return root->getParticles();
+}
+
+ParticleSet Node::getParticles() {
+    ParticleSet particles;
+    if (isLeaf()) {
+        if (particle != nullptr) {
+            particles.add(*particle);
+        }
+    } else {
+        for (int i = 0; i < 8; i++) {
+            ParticleSet childParticles = children[i]->getParticles();
+            particles.add(childParticles);
+        }
+    }
+    return particles;
+}
+

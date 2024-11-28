@@ -45,7 +45,22 @@ class Node {
      */
     void insert(Particle& particle);
 
+    /**
+     * Here is the procedure:
+     * 1. If the node is a leaf:
+     *   a. Return the force of the particle in the node
+     * 2. If the node is not a leaf:
+     *   a. If the opening angle condition is satisfied, return the force of the center of mass
+     *   b. If the opening angle condition is not satisfied, return the sum of the forces of the children
+     */
+    Eigen::Vector3d getForce(Particle& particle, double theta);
+
     static void save(std::ofstream& file, Node* node);
+
+    /**
+     * get recusrsively the particles in the tree
+     */
+    ParticleSet getParticles();
 
 
 private:
@@ -73,10 +88,11 @@ private:
 };
 
 
-
+// for the data, the depth of the tree is 14 <3
 class Octree {
     public:
     Node* root;
+    static double openingAngle;
 
     Octree(Eigen::Vector3d position, double halfWidth);
     Octree(double halfWidth);
@@ -85,9 +101,21 @@ class Octree {
     /**
      * Calls *clear()*
      * Inserts a set of particles into the tree.
+     * All particles we get copied, I don't understand why but if i don't do this my pointers get deleted.
      */
     void insert(ParticleSet particles);
 
+    /**
+     * get Force on a particle by descending the tree until opening angle condition is satisfied.
+     */
+    Eigen::Vector3d getForce(Particle& particle);
+
+    /**
+     * get all particles in the tree (for debugging purposes)
+     */
+    ParticleSet getParticles();
+
+public:
     /**
      * Saves recursively the nodes into a csv file
      */
@@ -100,3 +128,4 @@ private:
     void clear();
 
 };
+
