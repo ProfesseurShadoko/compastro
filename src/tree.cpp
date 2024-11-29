@@ -112,7 +112,9 @@ Eigen::Vector3d Node::getForce(Particle& particle, double theta) {
         Eigen::Vector3d r_tilde = particle.position - centerOfMass; // r_tilde = r-com
         Eigen::Vector3d monopole_force = totalMass * r_tilde / pow(r_tilde.norm(), 3); // F = -GM/r^2
         Eigen::Vector3d quadrupole_force = 0.5 * ( // G = 1 => G/2 = 0.5
-            2*quadrupole / pow(r_tilde.norm(), 4) + 5* (r_tilde.transpose() * quadrupole * r_tilde) / pow(r_tilde.norm(), 6)
+            2*quadrupole / pow(r_tilde.norm(), 4) + 5* (
+                (r_tilde.transpose() * quadrupole * r_tilde) * Eigen::Matrix3d::Identity()
+            ) / pow(r_tilde.norm(), 6)
         ) * r_tilde.normalized(); // this will all be zero if quadrupole hasn't been computed!
         return monopole_force + quadrupole_force;
     }
