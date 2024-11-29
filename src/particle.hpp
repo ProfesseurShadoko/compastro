@@ -44,9 +44,9 @@ class Particle {
     void display();
 
     /**
-     * @brief Compute the force between two particles. This will return the force applied by p2 on p1!
+     * @brief Compute the force between two particles. This will return the force applied by the attractor on the particle!
      */
-    static Eigen::Vector3d computeForce(Particle& p1, Particle& p2, double eps = 0);
+    static Eigen::Vector3d computeForce(Particle& particle, Particle& p_attractor, double eps = 0);
 };
 
 

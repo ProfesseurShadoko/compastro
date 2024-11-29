@@ -83,9 +83,10 @@ void Particle::display() {
 
 
 
-Eigen::Vector3d Particle::computeForce(Particle& p1, Particle& p2, double eps) {
-    Eigen::Vector3d r = p2.position - p1.position;
-    return - (p1.mass * p2.mass) / (pow(r.norm(), 2) + eps * eps) * r.normalized(); // F = -GM/(r+eps)^2
+Eigen::Vector3d Particle::computeForce(Particle& particle, Particle& p_attractor, double eps) {
+    Eigen::Vector3d r = particle.position - p_attractor.position; // u_r goes from p_attractor to our particle
+    return - (particle.mass * p_attractor.mass) / (pow(r.norm(), 2) + eps * eps) * r.normalized(); // F = -GM/(r+eps)^2
+    // -u_r goes from particle to p_attractor => particle is moved towards p_attractor!
 }
 
 /**
