@@ -85,9 +85,7 @@ void Particle::display() {
 
 Eigen::Vector3d Particle::computeForce(Particle& p1, Particle& p2, double eps) {
     Eigen::Vector3d r = p2.position - p1.position;
-    double r_norm = r.norm();
-    double f = p1.mass * p2.mass / (r_norm * r_norm + eps * eps);
-    return f * r / r_norm;
+    return - (p1.mass * p2.mass) / (pow(r.norm(), 2) + eps * eps) * r.normalized(); // F = -GM/(r+eps)^2
 }
 
 /**

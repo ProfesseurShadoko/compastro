@@ -44,7 +44,7 @@ class Particle {
     void display();
 
     /**
-     * @brief Compute the force between two particles. Returns a vector pointing FROM p1 TO p2. so the force acting on p1 is -f.
+     * @brief Compute the force between two particles. This will return the force applied by p2 on p1!
      */
     static Eigen::Vector3d computeForce(Particle& p1, Particle& p2, double eps = 0);
 };
