@@ -58,6 +58,8 @@ class Node {
      * 2. If the node is not a leaf:
      *   a. If the opening angle condition is satisfied, return the force of the center of mass
      *   b. If the opening angle condition is not satisfied, return the sum of the forces of the children
+     * 
+     * Returns the force acting on the input particle.
      */
     Eigen::Vector3d getForce(Particle& particle, double theta);
 
