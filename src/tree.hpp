@@ -92,7 +92,8 @@ private:
      * Updates the center of mass and total mass of the node.
      */
     void updateMass(Particle& particle);
-
+    
+public:
      /**
       * # second pass!
      * Qij = sum(mk[3(s-xk)_i * (s-xk)_j - |s-xk|^2 * delta_ij]) with s the position of the center of mass => you need to have it already computed, thus the necessity of a second pass
@@ -105,8 +106,10 @@ private:
      * log_8(N). Here we stop => in total O(N log N) <3
      * 
      * Note: for each specific particle, no issue that the resulting force gets computed with a quadrupole involving that exact particle. Indeed, if we go thrgouh the nodes that contain the specific particle, we will go all the way done to the leaf. Thus, no issue here.
+     * 
+     * The second pass is called recursively by the previous node. However, the previous node needs all particles below him. Thus, we need to return a vector of particles.
      */
-    void secondPass();
+    std::vector<Particle*> secondPass();
 };
 
 
@@ -136,6 +139,11 @@ class Octree {
      * get all particles in the tree (for debugging purposes)
      */
     ParticleSet getParticles();
+
+    /**
+     * Precompute all quadrupoles in the tree # second pass
+     */
+    void computeQuadrupoles();
 
 public:
     /**

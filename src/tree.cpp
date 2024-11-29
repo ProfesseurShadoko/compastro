@@ -17,6 +17,8 @@ Node::Node(Eigen::Vector3d position, double halfWidth) {
     this->centerOfMass = Eigen::Vector3d(0, 0, 0);
     this->totalMass = 0;
     this->particle = nullptr;
+    this->quadrupole = Eigen::Matrix3d::Zero();
+
     for (int i = 0; i < 8; i++) {
         this->children[i] = nullptr;
     }
@@ -192,9 +194,9 @@ void Node::save(std::ofstream& file, Node* node) {
 
 
 /**
- * #####################
- * ### GET PARTICLES ###
- * #####################
+ * ###################
+ * ### QUADRUPOLES ###
+ * ###################
  */
 
 ParticleSet Octree::getParticles() {
@@ -214,5 +216,35 @@ ParticleSet Node::getParticles() {
         }
     }
     return particles;
+}
+
+
+
+std::vector<Particle*> Node::secondPass() {
+    std::vector<Particle*> particles;
+    if (isLeaf()) { // if empty, quadrupole is zero. if not empty, center of mass is particle, and thus quadurpole is also zero!
+        if (particle != nullptr) {
+            particles.push_back(particle);
+        }
+        // quadrupole = Eigen::Matrix3d::Zero(); // is already initialized to zero for everyone
+        return particles;
+    }
+
+    for (int i = 0; i < 8; i++) {
+        std::vector<Particle*> childParticles = children[i]->secondPass(); // compute children quadrupoles and collects all particles below the child.
+        particles.insert(particles.end(), childParticles.begin(), childParticles.end()); // concateante!
+    }
+    // all quadrupoles are computed below / we have collected all particles below => we can compute the quadrupole
+    // quadrupole = Eigen::Matrix3d::Zero();
+    for (size_t k = 0; k < particles.size(); k++) {
+        Eigen::Vector3d r = particles[k]->position - centerOfMass; // this is s-xk
+        quadrupole += particles[k]->mass * (3 * r * r.transpose() - r.squaredNorm() * Eigen::Matrix3d::Identity());
+    }
+    
+    return particles;
+}
+
+void Octree::computeQuadrupoles() {
+    root->secondPass();
 }
 
