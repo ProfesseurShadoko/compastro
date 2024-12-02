@@ -61,7 +61,7 @@ class Node {
      * 
      * Returns the force acting on the input particle.
      */
-    Eigen::Vector3d getForce(Particle& particle, double theta);
+    Eigen::Vector3d getForce(Particle& particle, double theta, bool useQuadrupoles);
 
     static void save(std::ofstream& file, Node* node);
 
@@ -120,6 +120,11 @@ class Octree {
     public:
     Node* root;
     static double openingAngle;
+
+private:
+    bool useQuadrupoles;
+public:
+
 
     Octree(Eigen::Vector3d position, double halfWidth);
     Octree(double halfWidth);

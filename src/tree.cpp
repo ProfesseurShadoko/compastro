@@ -95,9 +95,13 @@ int Node::childIndex(Particle& particle) {
 // force computation (:D)
 //                    \/
 #include <iostream>
-Eigen::Vector3d Node::getForce(Particle& particle, double theta) {
+Eigen::Vector3d Node::getForce(Particle& particle, double theta, bool useQuadrupoles) {
     
-    // if the node is a leaf
+    /**
+     * ############
+     * ### LEAF ###
+     * ############ => simply compute the usual force
+     */
     if (isLeaf()) {
         
         if (this->particle == nullptr || this->particle->position == particle.position) {
@@ -106,22 +110,34 @@ Eigen::Vector3d Node::getForce(Particle& particle, double theta) {
         return Particle::computeForce(particle, *this->particle); // this is for now first order, we will add quadrupole later
     }
 
-    // if the node is not a leaf
+    /**
+     * ##################
+     * ### NOT A LEAF ###
+     * ################## => check opening angle condition
+     */
     double distance = (centerOfMass - particle.position).norm();
     if (halfWidth / distance < theta) {
+        // ### OPENING ANGLE CONDITION SATISFIED ### // => return approximationwith center of mass (and potentially quadrupole)
         Eigen::Vector3d r_tilde = particle.position - centerOfMass; // r_tilde = r-com
-        Eigen::Vector3d monopole_force = totalMass * r_tilde / pow(r_tilde.norm(), 3); // F = -GM/r^2
-        Eigen::Vector3d quadrupole_force = 0.5 * ( // G = 1 => G/2 = 0.5
-            2*quadrupole / pow(r_tilde.norm(), 4) + 5* (
-                (r_tilde.transpose() * quadrupole * r_tilde) * Eigen::Matrix3d::Identity()
-            ) / pow(r_tilde.norm(), 6)
-        ) * r_tilde.normalized(); // this will all be zero if quadrupole hasn't been computed!
+        Particle pseudoParticle(centerOfMass, Eigen::Vector3d::Zero(), totalMass); // pseudo particle at center of mass
+        Eigen::Vector3d monopole_force = Particle::computeForce(particle, pseudoParticle); // F = -GM/r^2
+
+        if (!useQuadrupoles) { // maybe we don't want to use quadrupoles yet
+            return monopole_force;
+        }   
+
+        // compute the quadrupole force
+        Eigen::Vector3d q_term = 2 * quadrupole * r_tilde / pow(r_tilde.norm(), 5); // (2Qr / r^5)
+        double rQr = r_tilde.transpose() * quadrupole * r_tilde;
+        Eigen::Vector3d r_term = 5*rQr * r_tilde / pow(r_tilde.norm(), 7); // (5rQr * r / r^7)
+        Eigen::Vector3d quadrupole_force = - 0.5 * particle.mass * (q_term + r_term); // -GM(2Qr / r^5 + 5rQr * r / r^7)
         return monopole_force + quadrupole_force;
     }
 
+    // ### OPENING ANGLE CONDITION NOT SATISFIED ### // => return sum of forces of children
     Eigen::Vector3d force(0, 0, 0);
     for (int i = 0; i < 8; i++) {
-        force += children[i]->getForce(particle, theta);
+        force += children[i]->getForce(particle, theta, useQuadrupoles);
     }
     return force;
 }
@@ -138,10 +154,12 @@ double Octree::openingAngle = 0.5; // default value for the opening angle ~ good
 
 
 Octree::Octree(Eigen::Vector3d position, double halfWidth) {
+    this->useQuadrupoles = false;
     this->root = new Node(position, halfWidth);
 }
 
 Octree::Octree(double halfWidth) {
+    this->useQuadrupoles = false;
     this->root = new Node(Eigen::Vector3d(0, 0, 0), halfWidth);
 }
 
@@ -164,7 +182,7 @@ void Octree::clear() {
 }
 
 Eigen::Vector3d Octree::getForce(Particle& particle) {
-    return root->getForce(particle, Octree::openingAngle);
+    return root->getForce(particle, Octree::openingAngle, useQuadrupoles);
 }
 
 
@@ -243,8 +261,8 @@ std::vector<Particle*> Node::secondPass() {
     // all quadrupoles are computed below / we have collected all particles below => we can compute the quadrupole
     // quadrupole = Eigen::Matrix3d::Zero();
     for (size_t k = 0; k < particles.size(); k++) {
-        Eigen::Vector3d r = particles[k]->position - centerOfMass; // this is s-xk
-        quadrupole += particles[k]->mass * (3 * r * r.transpose() - r.squaredNorm() * Eigen::Matrix3d::Identity());
+        Eigen::Vector3d r_tilde = particles[k]->position - centerOfMass; // this is s-xk
+        quadrupole += particles[k]->mass * (3 * r_tilde * r_tilde.transpose() - r_tilde.squaredNorm() * Eigen::Matrix3d::Identity());
     }
     
     return particles;
@@ -252,5 +270,6 @@ std::vector<Particle*> Node::secondPass() {
 
 void Octree::computeQuadrupoles() {
     root->secondPass();
+    this->useQuadrupoles = true;
 }
 
