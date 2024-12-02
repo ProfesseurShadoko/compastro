@@ -136,7 +136,7 @@ Eigen::Vector3d Node::getForce(Particle& particle, double theta, bool useQuadrup
         Eigen::Vector3d q_term = 2 * quadrupole * r_tilde / pow(r_tilde.norm(), 5); // (2Qr / r^5)
         double rQr = r_tilde.transpose() * quadrupole * r_tilde;
         Eigen::Vector3d r_term = 5 * rQr * r_tilde / pow(r_tilde.norm(), 7); // (5rQr * r / r^7)
-        Eigen::Vector3d quadrupole_force = - 0.5 * particle.mass * (q_term + r_term); // -GM(2Qr / r^5 + 5rQr * r / r^7) // should be 0.5 * m here but using 0.25 seems to work better => issue somewhere
+        Eigen::Vector3d quadrupole_force = 0.5 * particle.mass * (q_term - r_term); // -GM(2Qr / r^5 - 5rQr * r / r^7) // - !!! <3 :( => (u/v)' = u'v - uv' / v^2 !!!!! et pas +
         return monopole_force + quadrupole_force;
     }
 

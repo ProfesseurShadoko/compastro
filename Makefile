@@ -1,6 +1,6 @@
 # Compiler and flags
 CXX := g++
-CXXFLAGS := -Wall -O2 -I/usr/include/eigen3             # Add optimization and warnings
+CXXFLAGS := -Wall -O2 -I/usr/include/eigen3 
 
 # Library dependencies
 FFTW_LIB := -lfftw3 -lm

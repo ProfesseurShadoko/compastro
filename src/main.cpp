@@ -149,7 +149,10 @@ void treeQuadOnData(ParticleSet& particles) {
 
 
 int main() {
-    testDMQ2();
+    ParticleSet particles = loadData();
+    //computeExactForcesOnData(particles);
+    treeMonopoleOnData(particles);
+    treeQuadOnData(particles);
 
     Message("Execution complete!", "#");
     return 0;
