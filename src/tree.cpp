@@ -116,7 +116,13 @@ Eigen::Vector3d Node::getForce(Particle& particle, double theta, bool useQuadrup
      * ################## => check opening angle condition
      */
     double distance = (centerOfMass - particle.position).norm();
-    if (halfWidth / distance < theta) {
+    if (halfWidth / distance < theta) { 
+        /**
+         * small parenthesis on theta: what happens when we compare a particle to itself?
+         * well centerOfMass is computed with the particle => particle is in the cube => distance to center should be less than halfwidth (except if center of mass is unluckily far away from cube center)
+         * halfWidth / distance > 1 => setting theta to more than 1 will bring isues here! theta should be at most 1 for debug
+         */
+
         // ### OPENING ANGLE CONDITION SATISFIED ### // => return approximationwith center of mass (and potentially quadrupole)
         Eigen::Vector3d r_tilde = particle.position - centerOfMass; // r_tilde = r-com
         Particle pseudoParticle(centerOfMass, Eigen::Vector3d::Zero(), totalMass); // pseudo particle at center of mass
@@ -129,8 +135,8 @@ Eigen::Vector3d Node::getForce(Particle& particle, double theta, bool useQuadrup
         // compute the quadrupole force
         Eigen::Vector3d q_term = 2 * quadrupole * r_tilde / pow(r_tilde.norm(), 5); // (2Qr / r^5)
         double rQr = r_tilde.transpose() * quadrupole * r_tilde;
-        Eigen::Vector3d r_term = 5*rQr * r_tilde / pow(r_tilde.norm(), 7); // (5rQr * r / r^7)
-        Eigen::Vector3d quadrupole_force = - 0.5 * particle.mass * (q_term + r_term); // -GM(2Qr / r^5 + 5rQr * r / r^7)
+        Eigen::Vector3d r_term = 5 * rQr * r_tilde / pow(r_tilde.norm(), 7); // (5rQr * r / r^7)
+        Eigen::Vector3d quadrupole_force = - 0.5 * particle.mass * (q_term + r_term); // -GM(2Qr / r^5 + 5rQr * r / r^7) // should be 0.5 * m here but using 0.25 seems to work better => issue somewhere
         return monopole_force + quadrupole_force;
     }
 
