@@ -119,7 +119,6 @@ public:
 class Octree {
     public:
     Node* root;
-    static double openingAngle;
 
 private:
     bool useQuadrupoles;
@@ -140,7 +139,7 @@ public:
     /**
      * get Force on a particle by descending the tree until opening angle condition is satisfied.
      */
-    Eigen::Vector3d getForce(Particle& particle);
+    Eigen::Vector3d getForce(Particle& particle, double openingAngle);
 
     /**
      * get all particles in the tree (for debugging purposes)
@@ -148,7 +147,7 @@ public:
     ParticleSet getParticles();
 
     /**
-     * Precompute all quadrupoles in the tree # second pass
+     * Precompute all quadrupoles in the tree # second pass. If this function is called, the quadrupoles will be used in the force computation.
      */
     void computeQuadrupoles();
 

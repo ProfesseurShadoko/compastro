@@ -16,7 +16,9 @@ enum class Method {
 
 class ForceEngine {
 public:
-    double softening = 0;
+    static double softening;
+    static double openingAngle;
+    
     ParticleSet& particles; // avoid copy here! allows in place modification!
     
 

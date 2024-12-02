@@ -3,6 +3,10 @@
 #include <iostream>
 #include "tree.hpp"
 
+double ForceEngine::openingAngle = 0.5;
+double ForceEngine::softening = 0;
+
+
 std::vector<Eigen::Vector3d> ForceEngine::computeForce(Method method) const {
     switch (method) {
         case Method::direct:
@@ -45,7 +49,7 @@ std::vector<Eigen::Vector3d> ForceEngine::treeForce(bool use_quad) const {
     }
 
     for (int i = 0; i < particles.size(); i++) {
-        forces[i] = tree.getForce(particles.get(i));
+        forces[i] = tree.getForce(particles.get(i), openingAngle);
     }
     
     return forces;

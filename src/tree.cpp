@@ -150,9 +150,6 @@ Eigen::Vector3d Node::getForce(Particle& particle, double theta, bool useQuadrup
  * ####################
  */
 
-double Octree::openingAngle = 0.5; // default value for the opening angle ~ good accuracy here, for faster go to 1.0
-
-
 Octree::Octree(Eigen::Vector3d position, double halfWidth) {
     this->useQuadrupoles = false;
     this->root = new Node(position, halfWidth);
@@ -181,8 +178,8 @@ void Octree::clear() {
     root = new Node(position, halfWidth);
 }
 
-Eigen::Vector3d Octree::getForce(Particle& particle) {
-    return root->getForce(particle, Octree::openingAngle, useQuadrupoles);
+Eigen::Vector3d Octree::getForce(Particle& particle, double openingAngle) {
+    return root->getForce(particle, openingAngle, useQuadrupoles);
 }
 
 

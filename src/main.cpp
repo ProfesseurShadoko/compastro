@@ -56,8 +56,8 @@ int main() {
     particles.get(0).display();
     
     ForceEngine engine(particles);
-    engine.softening = 0;
-    Octree::openingAngle = 0.5;
+    ForceEngine::softening = 0;
+    ForceEngine::openingAngle = 0.5;
     Timer timer;
 
     /*
