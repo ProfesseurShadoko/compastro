@@ -38,7 +38,7 @@ std::vector<Eigen::Vector3d> ForceEngine::directForce() const {
 std::vector<Eigen::Vector3d> ForceEngine::treeForce(bool use_quad) const {
 
     std::vector<Eigen::Vector3d> forces(particles.size(), Eigen::Vector3d(0, 0, 0));
-    Octree tree(1); // TODO: adapt the halfwith to the data, data might cover more than 1 unit of length
+    Octree tree(particles.radius());
     tree.insert(particles);
     if (use_quad) {
         tree.computeQuadrupoles();

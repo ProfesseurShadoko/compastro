@@ -51,12 +51,13 @@ int main() {
     Message("Computing the exact force from `data.txt` using direct summation.");
     ParticleSet particles = ParticleSet::load("files/data.txt");
     Message::print("Loaded " + std::to_string(particles.size()) + " particles.");
+    Message::print("Radius of the particle set: " + std::to_string(particles.radius())); // this is quite big compared to the distribution saddely. // the tree will get bigger.
     Message::print("First Particle:");
     particles.get(0).display();
     
     ForceEngine engine(particles);
     engine.softening = 0;
-    Octree::openingAngle = 0.3;
+    Octree::openingAngle = 0.5;
     Timer timer;
 
     /*

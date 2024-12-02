@@ -141,6 +141,17 @@ int ParticleSet::size() {
     return particles.size();
 }
 
+double ParticleSet::radius() {
+    double radius = 0;
+    for (size_t i = 0; i < particles.size(); i++) {
+        double r = particles[i].position.cwiseAbs().maxCoeff();
+        if (r > radius) {
+            radius = r;
+        }
+    }
+    return radius;
+}
+
 // particle functions
 void ParticleSet::applyForces(std::vector<Eigen::Vector3d> forces) {
     // check the forces has the right size

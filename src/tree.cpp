@@ -269,6 +269,9 @@ std::vector<Particle*> Node::secondPass() {
 }
 
 void Octree::computeQuadrupoles() {
+    if (useQuadrupoles) {
+        throw std::runtime_error("Quadrupoles have already been computed.");
+    }
     root->secondPass();
     this->useQuadrupoles = true;
 }

@@ -120,6 +120,11 @@ public:
     int size();
 
     /**
+     * @brief assuming that the particles are centered around the origin. This function returns the radius of the cube => max_{part}(|x|, |y|, |z|)
+     */
+    double radius();
+
+    /**
      * Initialize the set with a number of particles, randomly distributed in a cube.
      */
     static ParticleSet load(std::string filename);
