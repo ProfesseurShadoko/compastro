@@ -17,6 +17,7 @@ class Particle {
     Eigen::Vector3d velocity;
     Eigen::Vector3d acceleration;
     double mass;
+    double current_time = 0;
 
 private:
     /**
@@ -26,6 +27,7 @@ private:
      * Indeed, the monopole is computed with computeForce(particle, part_com).
      */
     static long long forceCallCounter;
+    
 
 public:
     Particle();
@@ -49,6 +51,8 @@ public:
 
     /**
      * @brief Update the particle's position and velocity based on the current acceleration.
+     * Resets acceleration to zero after updating the position and velocity.
+     * Increments time counter by dt.
      */
     void update(double dt, IntegrationMethod method = IntegrationMethod::euler);
     void display();
@@ -76,8 +80,10 @@ public:
  * With this set, each particle has an index, which is good for tree code and all.
  */
 class ParticleSet {
-    public:
+
+public:
     std::vector<Particle> particles; // this will be the basic element, so we instantiate it here once, and it never gets copied after
+
 
     ParticleSet();
 
@@ -93,15 +99,8 @@ class ParticleSet {
      */
     void applyForces(std::vector<Eigen::Vector3d> forces);
 
-private:
     /**
-     * Calls the resetForce method for each particle in the set.
-     */
-    void resetForces();
-
-public:
-    /**
-     * Calls the update method for each particle in the set.
+     * Calls the update method for each particle in the set. Particle method resets the force. Increments time counter with dt.
      */
     void update(double dt, IntegrationMethod method = IntegrationMethod::euler);
 

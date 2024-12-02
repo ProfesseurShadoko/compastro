@@ -41,4 +41,6 @@ public:
      * Compute the force between particles given parameters and chosen method
      */
     std::vector<Eigen::Vector3d> computeForce(Method method) const;
+
+    double crossingTime() const;
 };

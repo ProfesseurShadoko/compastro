@@ -66,6 +66,8 @@ void computeExactForcesOnData(ParticleSet& particles) {
     timer.display();
 
     ParticleSet::saveForces("files/output/DIRECT_FORCES_eps=" + std::to_string(engine.softening) + "_data.csv", forces);
+    std::cout << "Force call count (direct): " << Particle::popForceCallCounter() << std::endl;
+
 }
 
 
@@ -85,43 +87,28 @@ void treeMonopoleOnData(ParticleSet& particles) {
     timer.stop();
     timer.display();
     ParticleSet::saveForces("files/output/TREE-MONO_FORCES_data.csv", forces_tree_mono);
+
+    std::cout << "Force call count (monopole):" << Particle::popForceCallCounter() << std::endl;
 }
 
-void testDMQ() {
-    ParticleSet particles = ParticleSet::load("files/tests/TEST_PARTICLES.txt");
-    std::cout << "First Particle: " << std::endl;
-    particles.get(0).display();
+void evolveMonopoleOnData(ParticleSet& particles) {
+    // let's evolve evryone a thousand times
+
+    Message("Evolving with Monopole, hang on tight!", "?");
+    ParticleSet particles_over_time = ParticleSet(particles); // snapshot of the particles
     ForceEngine engine(particles);
+    double dt = engine.crossingTime() / 100;
+    int N_iter = 100;
 
-    std::vector<Eigen::Vector3d> forces_direct = engine.computeForce(Method::direct);
-    std::vector<Eigen::Vector3d> forces_mono = engine.computeForce(Method::tree_mono);
-    std::vector<Eigen::Vector3d> forces_quad = engine.computeForce(Method::tree_quad);
+    for (int i=0; i<N_iter; i++) {
+        std::vector<Eigen::Vector3d> forces = engine.computeForce(Method::tree_mono);
+        particles.applyForces(forces);
+        particles.update(dt, IntegrationMethod::euler);
+        particles_over_time.add(particles);
+    }
 
-    ParticleSet::saveForces("files/tests/test_particles_direct.csv", forces_direct);
-    ParticleSet::saveForces("files/tests/test_particles_mono.csv", forces_mono);
-    ParticleSet::saveForces("files/tests/test_particles_quad.csv", forces_quad);
-}
-
-
-void testDMQ2() {
-    Particle particle = {0.9, 0.1, 0.1};
-    Particle pole1 = {-0.1, 0.12000000000000001, 0.1};
-    Particle pole2 = {-0.1, 0.08, 0.1};
-
-    ParticleSet particles = {particle, pole1, pole2};
-    ForceEngine engine(particles);
-
-    std::vector<Eigen::Vector3d> forces_direct = engine.computeForce(Method::direct);
-    std::vector<Eigen::Vector3d> forces_mono = engine.computeForce(Method::tree_mono);
-    std::vector<Eigen::Vector3d> forces_quad = engine.computeForce(Method::tree_quad);
-
-    Eigen::Vector3d force_direct = forces_direct[0];
-    Eigen::Vector3d force_mono = forces_mono[0];
-    Eigen::Vector3d force_quad = forces_quad[0];
-
-    std::cout << "Direct: " << force_direct.transpose() << std::endl;
-    std::cout << "Mono: " << force_mono.transpose() << std::endl;
-    std::cout << "Quad: " << force_quad.transpose() << std::endl;
+    ParticleSet::save("files/output/evolve_monopole/mono_" + std::to_string(N_iter) + "-iter.csv", particles_over_time);
+    
 }
 
 
@@ -142,6 +129,8 @@ void treeQuadOnData(ParticleSet& particles) {
     timer.stop();
     timer.display();
     ParticleSet::saveForces("files/output/TREE-QUAD_FORCES_data.csv", forces_tree_quad);
+    std::cout << "Force call count (quadrupole):" << Particle::popForceCallCounter() << std::endl;
+
 }
 
 
@@ -151,8 +140,11 @@ void treeQuadOnData(ParticleSet& particles) {
 int main() {
     ParticleSet particles = loadData();
     //computeExactForcesOnData(particles);
-    treeMonopoleOnData(particles);
-    treeQuadOnData(particles);
+    //treeMonopoleOnData(particles);
+    //treeQuadOnData(particles);
+
+
+    evolveMonopoleOnData(particles);
 
     Message("Execution complete!", "#");
     return 0;

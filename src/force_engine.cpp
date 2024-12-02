@@ -54,3 +54,14 @@ std::vector<Eigen::Vector3d> ForceEngine::treeForce(bool use_quad) const {
     
     return forces;
 }
+
+
+
+double ForceEngine::crossingTime() const {
+    double a = 0.0804;
+    double R_half = (1 + sqrt(2)) * a;
+    double M_tot = particles.get(0).mass * particles.size();
+    return sqrt(
+        pow(R_half, 3) / (M_tot)
+    );
+}

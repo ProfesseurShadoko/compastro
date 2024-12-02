@@ -31,6 +31,7 @@ Particle::Particle(const Particle& p) {
     this->velocity = p.velocity;
     this->acceleration = p.acceleration;
     this->mass = p.mass;
+    this->current_time = p.current_time;
 }
 
 Particle::Particle(std::initializer_list<double> init) {
@@ -72,6 +73,7 @@ void Particle::update(double dt, IntegrationMethod method) {
     }
     
     resetForce();
+    current_time += dt;
 }
 
 void Particle::display() {
@@ -172,16 +174,12 @@ void ParticleSet::applyForces(std::vector<Eigen::Vector3d> forces) {
     }
 }
 
-void ParticleSet::resetForces() {
-    for (size_t i = 0; i < particles.size(); i++) {
-        get(i).resetForce();
-    }
-}
 
 void ParticleSet::update(double dt, IntegrationMethod method) {
     for (size_t i = 0; i < particles.size(); i++) {
         get(i).update(dt, method);
     }
+
 }
 
 
@@ -208,11 +206,11 @@ void ParticleSet::save(std::string path, ParticleSet particles) {
     if (!file.is_open()) {
         throw std::runtime_error("Could not open file.");
     }
-    file << "index,mass,x,y,z,vx,vy,vz,eps,phi" << std::endl;
+    file << "index,mass,x,y,z,vx,vy,vz,eps,phi" << std::endl; // phi becomes now just a stupid name for time
 
     for (int i = 0; i < particles.size(); i++) {
         Particle p = particles.get(i);
-        file << i << "," << p.mass << "," << p.position(0) << "," << p.position(1) << "," << p.position(2) << "," << p.velocity(0) << "," << p.velocity(1) << "," << p.velocity(2) << ",0,0" << std::endl;
+        file << i << "," << p.mass << "," << p.position(0) << "," << p.position(1) << "," << p.position(2) << "," << p.velocity(0) << "," << p.velocity(1) << "," << p.velocity(2) << ",0," << p.current_time << std::endl;
     }
 }
 
