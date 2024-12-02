@@ -10,6 +10,8 @@
  * ######################
  */
 
+long long Particle::forceCallCounter = 0; 
+
 Particle::Particle() {
     this->position = Eigen::Vector3d(0, 0, 0);
     this->velocity = Eigen::Vector3d(0, 0, 0);
@@ -84,9 +86,16 @@ void Particle::display() {
 
 
 Eigen::Vector3d Particle::computeForce(Particle& particle, Particle& p_attractor, double eps) {
+    forceCallCounter++;
     Eigen::Vector3d r = particle.position - p_attractor.position; // u_r goes from p_attractor to our particle
     return - (particle.mass * p_attractor.mass) / (pow(r.norm(), 2) + eps * eps) * r.normalized(); // F = -GM/(r+eps)^2
     // -u_r goes from particle to p_attractor => particle is moved towards p_attractor!
+}
+
+long long Particle::popForceCallCounter() {
+    long long out = forceCallCounter;
+    forceCallCounter = 0;
+    return out;
 }
 
 /**

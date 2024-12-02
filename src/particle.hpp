@@ -18,6 +18,16 @@ class Particle {
     Eigen::Vector3d acceleration;
     double mass;
 
+private:
+    /**
+     * @brief Counts how many times the function computeForce has been called.
+     * 
+     * This will provide insights into how much force calculation gains from the tree code.
+     * Indeed, the monopole is computed with computeForce(particle, part_com).
+     */
+    static long long forceCallCounter;
+
+public:
     Particle();
     Particle(Eigen::Vector3d position, Eigen::Vector3d velocity, double mass);
     Particle(const Particle& p);
@@ -47,6 +57,14 @@ class Particle {
      * @brief Compute the force between two particles. This will return the force applied by the attractor on the particle!
      */
     static Eigen::Vector3d computeForce(Particle& particle, Particle& p_attractor, double eps = 0);
+
+    /**
+     * @brief Counts how many times the function computeForce has been called. Reset the counter.
+     * 
+     * This will provide insights into how much force calculation gains from the tree code.
+     * Indeed, the monopole is computed with computeForce(particle, part_com).
+     */
+    static long long popForceCallCounter();
 };
 
 
