@@ -32,6 +32,11 @@ Node::~Node() { // the only important thing is to call delete on everyone => rec
             children[i] = nullptr;
         }
     }
+
+    if (particle != nullptr) {
+        delete particle;  // Assuming particle is allocated dynamically with `new`
+        particle = nullptr;
+    }
 }
 
 void Node::insert(Particle& particle) {
