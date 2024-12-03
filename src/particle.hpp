@@ -132,6 +132,11 @@ public:
     Particle& get(int i);
 
     /**
+     * Slice
+     */
+    ParticleSet slice(int start, int end);
+
+    /**
      * @brief Get the number of particles in the set.
      */
     int size();
@@ -148,6 +153,7 @@ public:
 
     /**
      * @brief Export the particle set to a file. The resulting file is a .csv file.
+     * max_n_per_time_step means that only the first max_n_per_time_step particles are saved at each time step.
      */
     static void save(std::string filename, ParticleSet ps);
 
@@ -155,4 +161,6 @@ public:
      * Exports the forces acting on the particles to a file. The indeces will match the ones of the particles! Resulting file is a .csv file.
      */
     static void saveForces(std::string filename, std::vector<Eigen::Vector3d> forces);
+
+
 };

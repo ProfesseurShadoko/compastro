@@ -125,6 +125,14 @@ Particle& ParticleSet::get(int i) {
     return particles[i];
 }
 
+ParticleSet ParticleSet::slice(int start, int end) {
+    ParticleSet ps;
+    for (int i = start; i < end; i++) {
+        ps.add(get(i));
+    }
+    return ps;
+}
+
 void ParticleSet::add(Particle p) {
     particles.push_back(p);
 }
