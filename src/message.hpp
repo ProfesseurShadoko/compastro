@@ -3,6 +3,7 @@
 #include <string> 
 #include <iostream>
 #include <chrono>
+#include <thread>
 
 /**
  * @brief Class to color a string in the terminal. Call ColoredString("hop")::green()
@@ -32,6 +33,11 @@ class ColoredString {
         std::string cyan();
 };
 
+
+ColoredString cstr(std::string str);
+ColoredString cstr(int i);
+ColoredString cstr(double d);
+ColoredString cstr(ColoredString cs);
 
 
 class MutableClass {
@@ -101,4 +107,20 @@ public:
      * @brief Get the time in nanoseconds between the start and stop of the timer.
      */
     int getTime();
+};
+
+
+
+class ProgressBar {
+private:
+    int length;
+    int progress;
+    Timer timer;
+    void display();
+    static const int bar_length = 50;
+
+public:
+    ProgressBar(int length);
+    void update();
+    static void sleep(int ms);
 };

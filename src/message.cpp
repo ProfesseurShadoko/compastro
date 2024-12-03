@@ -43,6 +43,21 @@ std::string ColoredString::cyan() {
 }
 
 
+ColoredString cstr(std::string str) {
+    return ColoredString(str);
+}
+
+ColoredString cstr(int i) {
+    return ColoredString(std::to_string(i));
+}
+
+ColoredString cstr(double d) {
+    return ColoredString(std::to_string(d));
+}
+
+ColoredString cstr(ColoredString cs) {
+    return cs;
+}
 
 
 
@@ -156,3 +171,53 @@ int Timer::getTime() {
 }
 
 
+/**
+ * ###################
+ * ### PROGRESSBAR ###
+ * ###################
+ */
+
+
+ProgressBar::ProgressBar(int length) : length(length), progress(0) {
+    display();
+}
+
+void ProgressBar::display() {
+    std::string incomplete = "━";
+    std::string complete = cstr("━").blue();
+    int n_complete = ((progress * bar_length) / length);
+
+    std::string bar = "";
+    // fill the bar with complete times █
+    for (int i = 0; i < n_complete; i++) {
+        bar += complete;
+    }
+    // fill the bar with incomplete times █
+    for (int i = n_complete; i < bar_length; i++) {
+        bar += incomplete;
+    }
+
+    int progress_percent = ((progress * 100) / length);
+    if (progress >= length) {
+        progress_percent = 100;
+    }
+
+    std::string progress_percent_str = cstr(std::to_string(progress_percent) + "%").blue();
+
+    std::cout << "\r" << "Progress: " << bar << " (" << progress_percent_str << ")" << std::flush;
+}
+
+void ProgressBar::update() {
+    progress++;
+    display();
+
+    if (progress == length) {
+        std::cout << std::endl;
+    }
+}
+
+
+
+void ProgressBar::sleep(int ms) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+}
