@@ -109,13 +109,21 @@ ParticleSet ParticleSet::slice(int start, int end) {
     return ps;
 }
 
+ParticleSet ParticleSet::copy() {
+    // return ParticleSet(particles); // this is only a shallow copy, risk of inplace modification of particles
+    ParticleSet ps;
+    ps.add(*this); // the add function makes deep copy <3
+    return ps;
+}
+
+
 void ParticleSet::add(Particle p) {
     particles.push_back(p);
 }
 
 void ParticleSet::add(ParticleSet ps) {
     for (int i = 0; i < ps.size(); i++) {
-        add(ps.get(i));
+        add(ps.get(i)); // this makes a copy because ParticleSet::add makes a copy!
     }
 }
 

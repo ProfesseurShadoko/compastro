@@ -97,6 +97,7 @@ public:
 
     /**
      * Here a copy is made, but its the last time! The particles vector should never be copied again.
+     * FYI: this is a shallow copy, so the particles are not copied!
      */
     ParticleSet(std::vector<Particle> particles);
 
@@ -143,6 +144,11 @@ public:
      * Slice
      */
     ParticleSet slice(int start, int end);
+
+    /**
+     * Deep copy
+     */
+    ParticleSet copy();
 
     /**
      * @brief Get the number of particles in the set.
