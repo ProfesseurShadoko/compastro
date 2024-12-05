@@ -61,8 +61,12 @@ Eigen::Vector3d Particle::computeForce(Particle& particle, Particle& p_attractor
     // -u_r goes from particle to p_attractor => particle is moved towards p_attractor!
 }
 
+long long Particle::getForceCallCounter() {
+    return forceCallCounter;
+}
+
 long long Particle::popForceCallCounter() {
-    long long out = forceCallCounter;
+    long long out = getForceCallCounter();
     forceCallCounter = 0;
     return out;
 }

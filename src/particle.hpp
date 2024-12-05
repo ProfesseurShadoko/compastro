@@ -53,6 +53,14 @@ public:
      * Indeed, the monopole is computed with computeForce(particle, part_com).
      */
     static long long popForceCallCounter();
+
+    /**
+     * @brief Counts how many times the function computeForce has been called. In order to reset counter, call popForceCallCounter.
+     * 
+     * This will provide insights into how much force calculation gains from the tree code.
+     * Indeed, the monopole is computed with computeForce(particle, part_com).
+     */
+    static long long getForceCallCounter();
 };
 
 
