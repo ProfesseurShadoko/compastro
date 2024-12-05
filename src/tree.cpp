@@ -109,7 +109,7 @@ Eigen::Vector3d Node::getForce(Particle& particle, double theta, bool useQuadrup
      */
     if (isLeaf()) {
         
-        if (this->particle == nullptr || this->particle->position == particle.position) {
+        if (this->particle == nullptr || *(this->particle) == particle) { // id comparison
             return Eigen::Vector3d(0, 0, 0); // no force if no particle / a particle doesn't apply a force on itself
         }
         return Particle::computeForce(particle, *this->particle); // this is for now first order, we will add quadrupole later
