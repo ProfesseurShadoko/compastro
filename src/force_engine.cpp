@@ -189,8 +189,8 @@ void ForceEngine::rk2(double dt, Method method) {
 
     // --- k1 ---
     for (int i=0; i<particles.size(); i++) {
-        k1_v.push_back(forces[i] / particles.get(i).mass);
-        k1_r.push_back(particles.get(i).velocity);
+        k1_v.push_back(forces[i] / particles.get(i).mass); // a
+        k1_r.push_back(particles.get(i).velocity);         // v
     }
 
     // --- k2 ---
@@ -199,8 +199,8 @@ void ForceEngine::rk2(double dt, Method method) {
 
     // let's move our particles
     for (int i=0; i<particles.size(); i++) {
-        particles_copy.get(i).position += 1 * dt * k1_r[i];
-        particles_copy.get(i).velocity += 1 * dt * k1_v[i];
+        particles_copy.get(i).velocity += dt * k1_v[i];
+        particles_copy.get(i).position += dt * k1_r[i];
     }
 
     std::vector<Eigen::Vector3d> forces_k2 = ForceEngine(particles_copy).computeForce(method);

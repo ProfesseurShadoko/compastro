@@ -23,13 +23,54 @@ ParticleSet& loadData() {
 }
 
 
+void computeExactForcesOnData(ParticleSet& particles) {
+   
+    ForceEngine engine(particles);
+    Timer timer("Direct Solver");
+    timer.start();
+    std::vector<Eigen::Vector3d> forces = engine.computeForce(Method::direct);
+    timer.stop();
+    timer.display();
+
+    ParticleSet::saveForces("files/output/DIRECT_FORCES_eps=" + std::to_string(engine.softening) + "_data.csv", forces);
+    std::cout << "Force call count (direct): " << Particle::popForceCallCounter() << std::endl;
+
+}
+
+void treeMonopoleOnData(ParticleSet& particles) {
+    Message("Computing the force from `data.txt` using the tree code with monopole approximation.");
+    ForceEngine engine(particles);
+    Timer timer("Tree Solver (Monopole)");
+    timer.start();
+    std::vector<Eigen::Vector3d> forces_tree_mono = engine.computeForce(Method::tree_mono);
+    timer.stop();
+    timer.display();
+    ParticleSet::saveForces("files/output/TREE-MONO_FORCES_data.csv", forces_tree_mono);
+
+    std::cout << "Force call count (monopole):" << Particle::popForceCallCounter() << std::endl;
+}
+
+
+void treeQuadOnData(ParticleSet& particles) {
+    Message("Computing the force from `data.txt` using the tree code with quadrupole approximation.");
+    ForceEngine engine(particles);
+    Timer timer("Tree Solver (Quadrupole)");
+    timer.start();
+    std::vector<Eigen::Vector3d> forces_tree_quad = engine.computeForce(Method::tree_quad);
+    timer.stop();
+    timer.display();
+    ParticleSet::saveForces("files/output/TREE-QUAD_FORCES_data.csv", forces_tree_quad);
+    std::cout << "Force call count (quadrupole):" << Particle::popForceCallCounter() << std::endl;
+
+}
+
 
 void testIntegrationMethods() {
     Particle sun = Particle(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), 1);
     double dt = 1e-3;
 
     double e = 0.5; // eccentricity // in plane x-y
-    Particle earth = Particle(Eigen::Vector3d(1, 0, 0), Eigen::Vector3d(0, sqrt(1 + e), 0), 1e-3); // we want the sun to stay still
+    Particle earth = Particle(Eigen::Vector3d(1, 0, 0), Eigen::Vector3d(0, sqrt(1 + e), 0), 1e-30); // we want the sun to stay still
     // initial velocity is sqrt(1 + e)
 
     int N_iter = 53315;
@@ -70,18 +111,19 @@ void testIntegrationMethods() {
     ParticleSet::save("files/tests/integration_methods_notebook/rk2.csv", rk2_over_time);
     ParticleSet::save("files/tests/integration_methods_notebook/rk4.csv", rk4_over_time);
     ParticleSet::save("files/tests/integration_methods_notebook/symplectic.csv", symplectic_over_time);
+
+    std::cout << "System:" << std::endl;
+    system.get(0).display();
 }
 
 
 
 
 int main() {
-    testIntegrationMethods();
+    ParticleSet particles = loadData();
 
-    //ParticleSet particles = loadData();
-    //ForceEngine engine = ForceEngine(particles);
-    //double dt = engine.crossingTime() / 50;
-    //int N_iter = 1;
-    //ParticleSet over_time = engine.evolve(dt, Method::tree_mono, IntegrationMethod::symplectic, N_iter, 100);
+    computeExactForcesOnData(particles);
+    treeMonopoleOnData(particles);
+    treeQuadOnData(particles);
     return 0;
 }
