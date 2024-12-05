@@ -10,6 +10,7 @@
 #include "message.hpp"
 
 
+
 // ### LOAD PARTICLES ###
 ParticleSet& loadData() {
     Message("Computing the exact force from `data.txt` using direct summation.");
@@ -23,129 +24,64 @@ ParticleSet& loadData() {
 
 
 
+void testIntegrationMethods() {
+    Particle sun = Particle(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), 1);
+    double dt = 1e-3;
 
-/**
- * ########################
- * ### DIRECT SUMMATION ###
- * ########################
- */
-void testDirect3BodyStable() {
-    Message("Evolving 3 body problem with stable initial conditions using direct summation.");
-    ParticleSet particles = {
-        Particle(Eigen::Vector3d(0.97, -0.243, 0), Eigen::Vector3d(0.4662, 0.4324, 0), 1), // these are values for stable 3 body problem
-        Particle(Eigen::Vector3d(-0.97, 0.243, 0), Eigen::Vector3d(0.4662, 0.4324, 0), 1),
-        Particle(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(-0.9324, -0.8647, 0), 1)
-    };
-    ParticleSet particles_over_time = ParticleSet(particles);
+    double e = 0.5; // eccentricity // in plane x-y
+    Particle earth = Particle(Eigen::Vector3d(1, 0, 0), Eigen::Vector3d(0, sqrt(1 + e), 0), 1e-3); // we want the sun to stay still
+    // initial velocity is sqrt(1 + e)
 
-    // let's compute the forces and evolve our particles
-    ForceEngine engine(particles);
-    double dt = 0.01;
+    int N_iter = 53315;
+    ParticleSet system = {earth, sun};
 
-    for (int i = 0; i < 5000; i++) {
-        std::vector<Eigen::Vector3d> forces = engine.computeForce(Method::direct);
-        particles.applyForces(forces);
-        particles.update(dt, IntegrationMethod::euler);
-        particles_over_time.add(particles); // this makes a copy => takes a snapshot of the particles
-    }
+    ProgressBar::mute();
 
-    //save the particles over time stored in the particle_set into a .csv file
-    ParticleSet::save("files/tests/DIRECT_EULER_N=3_stable.csv", particles_over_time);
-
-    Message::print("Done.\n");
-}
-
-
-void computeExactForcesOnData(ParticleSet& particles) {
-   
-    ForceEngine engine(particles);
-    Timer timer("Direct Solver");
-    timer.start();
-    std::vector<Eigen::Vector3d> forces = engine.computeForce(Method::direct);
-    timer.stop();
-    timer.display();
-
-    ParticleSet::saveForces("files/output/DIRECT_FORCES_eps=" + std::to_string(engine.softening) + "_data.csv", forces);
-    std::cout << "Force call count (direct): " << Particle::popForceCallCounter() << std::endl;
-
-}
-
-
-
-/**
- * #####################
- * ### TREE MONOPOLE ###
- * #####################
- */
-
-void treeMonopoleOnData(ParticleSet& particles) {
-    Message("Computing the force from `data.txt` using the tree code with monopole approximation.");
-    ForceEngine engine(particles);
-    Timer timer("Tree Solver (Monopole)");
-    timer.start();
-    std::vector<Eigen::Vector3d> forces_tree_mono = engine.computeForce(Method::tree_mono);
-    timer.stop();
-    timer.display();
-    ParticleSet::saveForces("files/output/TREE-MONO_FORCES_data.csv", forces_tree_mono);
-
-    std::cout << "Force call count (monopole):" << Particle::popForceCallCounter() << std::endl;
-}
-
-void evolveMonopoleOnData(ParticleSet& particles) {
-    // let's evolve evryone a thousand times
-
-    Message("Evolving with Monopole, hang on tight!", "?");
-    ParticleSet particles_over_time = ParticleSet(particles); // snapshot of the particles
-    ForceEngine engine(particles);
-    double dt = engine.crossingTime() / 100;
-    int N_iter = 100;
-
-    for (int i=0; i<N_iter; i++) {
-        std::vector<Eigen::Vector3d> forces = engine.computeForce(Method::tree_mono);
-        particles.applyForces(forces);
-        particles.update(dt, IntegrationMethod::euler);
-        particles_over_time.add(particles);
-    }
-
-    ParticleSet::save("files/output/evolve_monopole/mono_" + std::to_string(N_iter) + "-iter.csv", particles_over_time);
+    // --- Euler ---
+    ParticleSet euler_system = system; // deep copy
+    ForceEngine euler_engine = ForceEngine(euler_system);
+    ParticleSet euler_over_time = euler_engine.evolve(dt, Method::direct, IntegrationMethod::euler, N_iter, 2); // we always use direct method here
+    std::cout << "Euler: " << euler_over_time.size() << std::endl;
     
+    // --- Leapfrog ---
+    ParticleSet leapfrog_system = system; // deep copy
+    ForceEngine leapfrog_engine = ForceEngine(leapfrog_system);
+    ParticleSet leapfrog_over_time = leapfrog_engine.evolve(dt, Method::direct, IntegrationMethod::leapfrog, N_iter, 2); // we always use direct method here
+
+    // --- RK2 ---
+    ParticleSet rk2_system = system; // deep copy
+    ForceEngine rk2_engine = ForceEngine(rk2_system);
+    ParticleSet rk2_over_time = rk2_engine.evolve(dt, Method::direct, IntegrationMethod::rk2, N_iter, 2); // we always use direct method here
+
+    // --- RK4 ---
+    ParticleSet rk4_system = system; // deep copy
+    ForceEngine rk4_engine = ForceEngine(rk4_system);
+    ParticleSet rk4_over_time = rk4_engine.evolve(dt, Method::direct, IntegrationMethod::rk4, N_iter, 2); // we always use direct method here
+
+    // --- Symplectic ---
+    ParticleSet symplectic_system = system; // deep copy
+    ForceEngine symplectic_engine = ForceEngine(symplectic_system);
+    ParticleSet symplectic_over_time = symplectic_engine.evolve(dt, Method::direct, IntegrationMethod::symplectic, N_iter, 2); // we always use direct method here
+
+
+    // Let's save everything
+    ParticleSet::save("files/tests/integration_methods_notebook/euler.csv", euler_over_time);
+    ParticleSet::save("files/tests/integration_methods_notebook/leapfrog.csv", leapfrog_over_time);
+    ParticleSet::save("files/tests/integration_methods_notebook/rk2.csv", rk2_over_time);
+    ParticleSet::save("files/tests/integration_methods_notebook/rk4.csv", rk4_over_time);
+    ParticleSet::save("files/tests/integration_methods_notebook/symplectic.csv", symplectic_over_time);
 }
-
-
-
-
-/**
- * #######################
- * ### TREE QUADRUPOLE ###
- * #######################
- */
-
-void treeQuadOnData(ParticleSet& particles) {
-    Message("Computing the force from `data.txt` using the tree code with quadrupole approximation.");
-    ForceEngine engine(particles);
-    Timer timer("Tree Solver (Quadrupole)");
-    timer.start();
-    std::vector<Eigen::Vector3d> forces_tree_quad = engine.computeForce(Method::tree_quad);
-    timer.stop();
-    timer.display();
-    ParticleSet::saveForces("files/output/TREE-QUAD_FORCES_data.csv", forces_tree_quad);
-    std::cout << "Force call count (quadrupole):" << Particle::popForceCallCounter() << std::endl;
-
-}
-
 
 
 
 
 int main() {
-    ParticleSet particles = loadData();
-    //computeExactForcesOnData(particles);
-    //treeMonopoleOnData(particles);
-    //treeQuadOnData(particles);
+    testIntegrationMethods();
 
-
-    evolveMonopoleOnData(particles);
-
-    Message("Execution complete!", "#");
+    //ParticleSet particles = loadData();
+    //ForceEngine engine = ForceEngine(particles);
+    //double dt = engine.crossingTime() / 50;
+    //int N_iter = 1;
+    //ParticleSet over_time = engine.evolve(dt, Method::tree_mono, IntegrationMethod::symplectic, N_iter, 100);
     return 0;
 }

@@ -96,6 +96,9 @@ ParticleSet::ParticleSet(std::initializer_list<Particle> init) {
     this->particles = std::vector<Particle>(init);
 }
 
+ParticleSet::ParticleSet(const ParticleSet& ps) {
+    this->particles = ps.particles; // this is a deep copy, because std::vector does deep copy on its own
+}
 
 Particle& ParticleSet::get(int i) {
     return particles[i];
@@ -109,12 +112,6 @@ ParticleSet ParticleSet::slice(int start, int end) {
     return ps;
 }
 
-ParticleSet ParticleSet::copy() {
-    // return ParticleSet(particles); // this is only a shallow copy, risk of inplace modification of particles
-    ParticleSet ps;
-    ps.add(*this); // the add function makes deep copy <3
-    return ps;
-}
 
 
 void ParticleSet::add(Particle p) {

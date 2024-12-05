@@ -177,12 +177,17 @@ int Timer::getTime() {
  * ###################
  */
 
+bool ProgressBar::muted = false;
+
 
 ProgressBar::ProgressBar(int length) : length(length), progress(0) {
     display();
 }
 
 void ProgressBar::display() {
+    if (muted) {
+        return;
+    }
     std::string incomplete = "━";
     std::string complete = cstr("━").blue();
     int n_complete = ((progress * bar_length) / length);
@@ -220,4 +225,12 @@ void ProgressBar::update() {
 
 void ProgressBar::sleep(int ms) {
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+}
+
+void ProgressBar::mute() {
+    muted = true;
+}
+
+void ProgressBar::unmute() {
+    muted = false;
 }

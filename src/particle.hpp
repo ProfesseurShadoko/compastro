@@ -104,6 +104,11 @@ public:
     ParticleSet(std::initializer_list<Particle> init);
 
     /**
+     * Copy constructor. Actually is a deep copy, by magic of std::vector.
+     */
+    ParticleSet(const ParticleSet& ps);
+
+    /**
      * Calls the applyForce method for each particle in the set. Calls resetForces first. This means that new forces erase previous ones.
      */
     void applyForces(std::vector<Eigen::Vector3d> forces);
@@ -145,10 +150,6 @@ public:
      */
     ParticleSet slice(int start, int end);
 
-    /**
-     * Deep copy
-     */
-    ParticleSet copy();
 
     /**
      * @brief Get the number of particles in the set.

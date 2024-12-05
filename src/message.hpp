@@ -118,9 +118,13 @@ private:
     Timer timer;
     void display();
     static const int bar_length = 50;
+    static bool muted;
+
 
 public:
     ProgressBar(int length);
     void update();
     static void sleep(int ms);
+    static void mute();
+    static void unmute();
 };
