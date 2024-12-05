@@ -4,10 +4,7 @@
 #include <vector>
 #include <initializer_list>
 
-enum class IntegrationMethod {
-    euler,
-    leapfrog,
-};
+
 
 
 class Particle {
@@ -15,7 +12,6 @@ class Particle {
     public:
     Eigen::Vector3d position;
     Eigen::Vector3d velocity;
-    Eigen::Vector3d acceleration;
     double mass;
     double current_time = 0;
 
@@ -40,21 +36,9 @@ public:
     Particle(std::initializer_list<double> init);
 
     /**
-     * @brief Apply a force to the particle. Updates the acceleration, with the formula F = ma.
+     * Increments current time by dt.
      */
-    void applyForce(Eigen::Vector3d force);
-
-    /**
-     * @brief Reset the force acting on the particle. This function needs to be called at each time step.
-     */
-    void resetForce();
-
-    /**
-     * @brief Update the particle's position and velocity based on the current acceleration.
-     * Resets acceleration to zero after updating the position and velocity.
-     * Increments time counter by dt.
-     */
-    void update(double dt, IntegrationMethod method = IntegrationMethod::euler);
+    void updateCurrentTime(double dt);
     void display();
 
     /**
@@ -100,9 +84,9 @@ public:
     void applyForces(std::vector<Eigen::Vector3d> forces);
 
     /**
-     * Calls the update method for each particle in the set. Particle method resets the force. Increments time counter with dt.
+     * Increments current time of each particle by dt.
      */
-    void update(double dt, IntegrationMethod method = IntegrationMethod::euler);
+    void updateCurrentTime(double dt);
 
     /**
      * @brief Add a particle to the set. Particle is copied! This is important when you store a trajectory.
@@ -153,7 +137,6 @@ public:
 
     /**
      * @brief Export the particle set to a file. The resulting file is a .csv file.
-     * max_n_per_time_step means that only the first max_n_per_time_step particles are saved at each time step.
      */
     static void save(std::string filename, ParticleSet ps);
 
