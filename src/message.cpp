@@ -202,9 +202,9 @@ void ProgressBar::display() {
         progress_percent = 100;
     }
 
-    std::string progress_percent_str = cstr(std::to_string(progress_percent) + "%").blue();
+    std::string progress_percent_str = cstr(std::to_string(progress_percent) + "%").red();
 
-    std::cout << "\r" << "Progress: " << bar << " (" << progress_percent_str << ")" << std::flush;
+    std::cout << "\r" << cstr("[%]").blue() <<" Progress: " << bar << " (" << progress_percent_str << ")" << std::flush;
 }
 
 void ProgressBar::update() {
