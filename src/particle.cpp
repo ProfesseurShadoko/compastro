@@ -11,17 +11,20 @@
  */
 
 long long Particle::forceCallCounter = 0; 
+long long Particle::id_counter = 0;
 
 Particle::Particle() {
     this->position = Eigen::Vector3d(0, 0, 0);
     this->velocity = Eigen::Vector3d(0, 0, 0);
     this->mass = 1;
+    this->id = id_counter++;
 }
 
 Particle::Particle(Eigen::Vector3d position, Eigen::Vector3d velocity, double mass) {
     this->position = position;
     this->velocity = velocity;
     this->mass = mass;
+    this->id = id_counter++;
 }
 
 Particle::Particle(const Particle& p) {
@@ -29,6 +32,7 @@ Particle::Particle(const Particle& p) {
     this->velocity = p.velocity;
     this->mass = p.mass;
     this->current_time = p.current_time;
+    this->id = p.id;
 }
 
 Particle::Particle(std::initializer_list<double> init) {
@@ -38,6 +42,7 @@ Particle::Particle(std::initializer_list<double> init) {
     this->position = Eigen::Vector3d(*(init.begin()), *(init.begin() + 1), *(init.begin() + 2));
     this->velocity = Eigen::Vector3d(0, 0, 0);
     this->mass = 1;
+    this->id = id_counter++;
 }
 
 void Particle::updateCurrentTime(double dt) {
@@ -45,7 +50,7 @@ void Particle::updateCurrentTime(double dt) {
 }
 
 void Particle::display() {
-    std::cout << "Particle:" << std::endl;
+    std::cout << "Particle <" + std::to_string(id) + ">:" << std::endl;
     std::cout << "\t- Position: " << position.transpose() << std::endl;
     std::cout << "\t- Velocity: " << velocity.transpose() << std::endl;
     std::cout << "\t- Mass: " << mass << std::endl;

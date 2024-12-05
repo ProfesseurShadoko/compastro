@@ -14,6 +14,7 @@ class Particle {
     Eigen::Vector3d velocity;
     double mass;
     double current_time = 0;
+    
 
 private:
     /**
@@ -23,17 +24,32 @@ private:
      * Indeed, the monopole is computed with computeForce(particle, part_com).
      */
     static long long forceCallCounter;
+    static long long id_counter;
+    int id;
     
 
 public:
     Particle();
     Particle(Eigen::Vector3d position, Eigen::Vector3d velocity, double mass);
+
+    /**
+     * Copy constructor. The id of the particle also gets copied!
+     */
     Particle(const Particle& p);
 
     /**
      * Initialize particle by giving position only. Other quantities are set to zero (1 for mass).
      */
     Particle(std::initializer_list<double> init);
+
+    /**
+     * Compares id of particles. Usefull in the tree code. Careful! Does not compare positions. And equality survives copying:
+     * particle == Particle(particle) is true.
+     */
+    bool operator==(const Particle& p) const {
+        return id == p.id;
+    }
+
 
     /**
      * Increments current time by dt.
