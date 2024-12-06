@@ -63,13 +63,15 @@ void ForceEngine::evolve(double dt, Method method, IntegrationMethod i_method) {
 }
 
 
-ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_method, int N_iter, int N_save) {
+ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_method, int N_iter, int N_save, int N_skip) {
     Message("Evolving particles:");
     Message::print(" > Method: " + std::to_string((int) method));
     Message::print(" > Integration Method: " + std::to_string((int) i_method));
     Message::print(" > Particle Set Size: " + std::to_string(particles.size()));
     Message::print(" > Number of iterations: " + std::to_string(N_iter));
     Message::print(" > Number of particles to save: " + std::to_string(N_save));
+    Message::print(" > Number of iterations to skip: " + std::to_string(N_skip));
+    Message::print(" > Total number of particles saved: " + cstr(std::to_string(N_iter * N_save / N_skip)).yellow());
     Message::print(" > Opening Angle: " + std::to_string(openingAngle));
     Message::print(" > Softening: " + std::to_string(softening));
     Message::print(" > Crossing Time: " + std::to_string(crossingTime()));
@@ -83,6 +85,7 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
     for (int i=0; i<N_iter; i++) {
         bar.update();
         evolve(dt, method, i_method);
+        if (i % N_skip != 0) continue; // only one out of N_skip steps get saved
         particles_over_time.add(particles.slice(0, N_save));
     }
     timer.stop();

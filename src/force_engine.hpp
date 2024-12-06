@@ -85,8 +85,9 @@ public:
      * 
      * Does not return the current state of particles, but a copy of N_save particles at each of the N_iter step. Time information is stored in the current_time of stored particles.
      * Steps 1. and 2. are done in the evolve method (overloaded).
+     * If N_skip is 4, then only the 4th, 8th, 12th, ... particle set will be stored. Defaults to 1.
      */
-    ParticleSet evolve(double dt, Method method, IntegrationMethod i_method, int N_iter, int N_save);
+    ParticleSet evolve(double dt, Method method, IntegrationMethod i_method, int N_iter, int N_save = -1, int N_skip = 1);
 
     double crossingTime() const;
 };
