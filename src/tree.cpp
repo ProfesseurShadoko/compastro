@@ -2,6 +2,7 @@
 
 
 #include "tree.hpp"
+#include "force_engine.hpp" // for softening
 
 
 
@@ -112,7 +113,7 @@ Eigen::Vector3d Node::getForce(Particle& particle, double theta, bool useQuadrup
         if (this->particle == nullptr || *(this->particle) == particle) { // id comparison
             return Eigen::Vector3d(0, 0, 0); // no force if no particle / a particle doesn't apply a force on itself
         }
-        return Particle::computeForce(particle, *this->particle); // this is for now first order, we will add quadrupole later
+        return Particle::computeForce(particle, *this->particle, ForceEngine::softening); // this is for now first order, we will add quadrupole later
     }
 
     /**
@@ -131,7 +132,7 @@ Eigen::Vector3d Node::getForce(Particle& particle, double theta, bool useQuadrup
         // ### OPENING ANGLE CONDITION SATISFIED ### // => return approximationwith center of mass (and potentially quadrupole)
         Eigen::Vector3d r_tilde = particle.position - centerOfMass; // r_tilde = r-com
         Particle pseudoParticle(centerOfMass, Eigen::Vector3d::Zero(), totalMass); // pseudo particle at center of mass
-        Eigen::Vector3d monopole_force = Particle::computeForce(particle, pseudoParticle); // F = -GM/r^2
+        Eigen::Vector3d monopole_force = Particle::computeForce(particle, pseudoParticle, ForceEngine::softening); // F = -GM/r^2
 
         if (!useQuadrupoles) { // maybe we don't want to use quadrupoles yet
             return monopole_force;
