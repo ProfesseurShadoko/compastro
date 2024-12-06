@@ -47,8 +47,10 @@ public:
      * particle == Particle(particle) is true.
      */
     bool operator==(const Particle& p) const {
-        return id == p.id;
+        return getId() == p.getId();
     }
+
+    int getId() const;
 
 
     /**

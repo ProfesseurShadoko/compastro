@@ -58,6 +58,10 @@ void Particle::display() {
     std::cout << std::endl;
 }
 
+int Particle::getId() const {
+    return id;
+}
+
 
 
 Eigen::Vector3d Particle::computeForce(Particle& particle, Particle& p_attractor, double eps) {
@@ -189,7 +193,7 @@ void ParticleSet::save(std::string path, ParticleSet particles) {
     file << std::fixed << std::setprecision(30); // need high precision to evaluate rk2, who has precision up to 1e-15
     for (int i = 0; i < particles.size(); i++) {
         Particle p = particles.get(i);
-        file << i << "," << p.mass << "," << p.position(0) << "," << p.position(1) << "," << p.position(2) << "," << p.velocity(0) << "," << p.velocity(1) << "," << p.velocity(2) << ",0," << p.current_time << std::endl;
+        file << p.getId() << "," << p.mass << "," << p.position(0) << "," << p.position(1) << "," << p.position(2) << "," << p.velocity(0) << "," << p.velocity(1) << "," << p.velocity(2) << ",0," << p.current_time << std::endl;
     }
 }
 
