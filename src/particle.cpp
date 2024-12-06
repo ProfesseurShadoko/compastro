@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip> // precision of csv files
+#include "force_engine.hpp" // for softening
 
 
 /**
@@ -65,10 +66,16 @@ int Particle::getId() const {
 
 
 Eigen::Vector3d Particle::computeForce(Particle& particle, Particle& p_attractor, double eps) {
+    /*
     forceCallCounter++;
     Eigen::Vector3d r = particle.position - p_attractor.position; // u_r goes from p_attractor to our particle
     return - (particle.mass * p_attractor.mass) / (pow(r.norm(), 2) + eps * eps) * r.normalized(); // F = -GM/(r+eps)^2
-    // -u_r goes from particle to p_attractor => particle is moved towards p_attractor!
+    // -u_r goes from particle to p_attractor => particle is moved towards p_attractor!*/ // actually this is incorrect
+    Eigen::Vector3d r = particle.position - p_attractor.position; // u_r goes from p_attractor to our particle
+    double r_squared = r.squaredNorm() + eps * eps;              // r^2 + eps^2
+    double r_cubed = sqrt(r_squared) * r_squared;                // (r^2 + eps^2)^(3/2)
+    return - (particle.mass * p_attractor.mass) / r_cubed * r;   // F = -GM/(r^2 + eps^2)^(3/2) * r
+
 }
 
 long long Particle::getForceCallCounter() {
@@ -111,6 +118,12 @@ Particle& ParticleSet::get(int i) {
 
 ParticleSet ParticleSet::slice(int start, int end) {
     ParticleSet ps;
+
+    if (end < start) {
+        // this means add all of them
+        end = particles.size();
+    }
+
     for (int i = start; i < end; i++) {
         ps.add(get(i));
     }
@@ -193,7 +206,7 @@ void ParticleSet::save(std::string path, ParticleSet particles) {
     file << std::fixed << std::setprecision(30); // need high precision to evaluate rk2, who has precision up to 1e-15
     for (int i = 0; i < particles.size(); i++) {
         Particle p = particles.get(i);
-        file << p.getId() << "," << p.mass << "," << p.position(0) << "," << p.position(1) << "," << p.position(2) << "," << p.velocity(0) << "," << p.velocity(1) << "," << p.velocity(2) << ",0," << p.current_time << std::endl;
+        file << p.getId() << "," << p.mass << "," << p.position(0) << "," << p.position(1) << "," << p.position(2) << "," << p.velocity(0) << "," << p.velocity(1) << "," << p.velocity(2) << "," << ForceEngine::softening << "," << p.current_time << std::endl;
     }
 }
 

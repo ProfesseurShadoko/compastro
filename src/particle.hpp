@@ -148,7 +148,7 @@ public:
     Particle& get(int i);
 
     /**
-     * Slice
+     * Slice. If start greater than end (eg if end = -1), all particles are added.
      */
     ParticleSet slice(int start, int end);
 
