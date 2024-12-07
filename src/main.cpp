@@ -116,14 +116,41 @@ void testIntegrationMethods() {
     system.get(0).display();
 }
 
+void simulateMilkyWay() {
+    ParticleSet particles = ParticleSet::load("files/tests/galaxy/milkyway.txt");
+
+    double softening = 0.01; // 1% of R
+    double crossing_time = 1.0;
+    double dt = crossing_time / 100;
+    int N_iter = 3000;
+    int N_save = -1; // -1 means all of them
+    int N_skip = 3;
+
+    ForceEngine::softening = softening;
+    ForceEngine::openingAngle = 0.5;
+
+    /**
+     * Let's start by computing the initial forces. We want to check whether the iitial velocity conditions match circular orbits!
+     */
+    ForceEngine engine_initial(particles);
+    std::vector<Eigen::Vector3d> forces = engine_initial.computeForce(Method::direct); // we want exact result here
+    ParticleSet::saveForces("files/tests/galaxy/milkyway_initial_forces.csv", forces);
+
+    ForceEngine engine(particles);
+    ParticleSet over_time = engine.evolve(dt, Method::tree_quad, IntegrationMethod::rk4, N_iter, N_save,N_skip);
+
+    ParticleSet::save("files/tests/galaxy/milkyway_over_time.csv", over_time);
+}
+
 
 
 
 int main() {
-    ParticleSet particles = loadData();
+    //ParticleSet particles = loadData();
 
-    computeExactForcesOnData(particles);
-    treeMonopoleOnData(particles);
-    treeQuadOnData(particles);
+    //computeExactForcesOnData(particles);
+    //treeMonopoleOnData(particles);
+    //treeQuadOnData(particles);
+    simulateMilkyWay();
     return 0;
 }

@@ -3,6 +3,8 @@
 #include <iostream>
 #include "tree.hpp"
 #include "message.hpp"
+#include <sstream> // scientific notation
+#include <iomanip>
 
 double ForceEngine::openingAngle = 0.5;
 double ForceEngine::softening = 0;
@@ -71,7 +73,12 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
     Message::print(" > Number of iterations: " + std::to_string(N_iter));
     Message::print(" > Number of particles to save: " + std::to_string(N_save));
     Message::print(" > Number of iterations to skip: " + std::to_string(N_skip));
-    Message::print(" > Total number of particles saved: " + cstr(std::to_string(N_iter * N_save / N_skip)).yellow());
+
+    int  real_n_save = (N_save==-1) ? particles.size() : N_save;
+    std::stringstream ss;
+    ss << std::scientific << std::setprecision(1) << ((double)N_iter * real_n_save / N_skip);
+
+    Message::print(" > Total number of particles saved: " + cstr(ss.str()).yellow());
     Message::print(" > Opening Angle: " + std::to_string(openingAngle));
     Message::print(" > Softening: " + std::to_string(softening));
     Message::print(" > Crossing Time: " + std::to_string(crossingTime()));
