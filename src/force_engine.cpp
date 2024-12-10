@@ -66,6 +66,12 @@ void ForceEngine::evolve(double dt, Method method, IntegrationMethod i_method) {
 
 
 ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_method, int N_iter, int N_save, int N_skip) {
+
+    /**
+     * -----------------------------
+     * ! --- Print Information --- !
+     * -----------------------------
+     */
     Message("Evolving particles:");
     Message::print(" > Method: " + std::to_string((int) method));
     Message::print(" > Integration Method: " + std::to_string((int) i_method));
@@ -82,6 +88,13 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
     Message::print(" > Opening Angle: " + std::to_string(openingAngle));
     Message::print(" > Softening: " + std::to_string(softening));
     Message::print(" > Crossing Time: " + std::to_string(crossingTime()));
+
+
+    /**
+     * ---------------------
+     * ! --- Evolution --- !
+     * ---------------------
+     */
 
     ProgressBar bar(N_iter);
     ParticleSet particles_over_time = ParticleSet(particles).slice(0, N_save); // snapshot of the particles

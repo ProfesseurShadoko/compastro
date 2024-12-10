@@ -67,10 +67,11 @@ int Particle::getId() const {
 
 Eigen::Vector3d Particle::computeForce(Particle& particle, Particle& p_attractor, double eps) {
     /*
-    forceCallCounter++;
+    
     Eigen::Vector3d r = particle.position - p_attractor.position; // u_r goes from p_attractor to our particle
     return - (particle.mass * p_attractor.mass) / (pow(r.norm(), 2) + eps * eps) * r.normalized(); // F = -GM/(r+eps)^2
     // -u_r goes from particle to p_attractor => particle is moved towards p_attractor!*/ // actually this is incorrect
+    forceCallCounter++;
     Eigen::Vector3d r = particle.position - p_attractor.position; // u_r goes from p_attractor to our particle
     double r_squared = r.squaredNorm() + eps * eps;              // r^2 + eps^2
     double r_cubed = sqrt(r_squared) * r_squared;                // (r^2 + eps^2)^(3/2)
@@ -222,4 +223,25 @@ void ParticleSet::saveForces(std::string path, std::vector<Eigen::Vector3d> forc
     for (size_t i = 0; i < forces.size(); i++) {
         file << i << "," << forces[i](0) << "," << forces[i](1) << "," << forces[i](2) << std::endl;
     }
+}
+
+
+std::vector<ParticleSet> ParticleSet::split() {
+    double last_time_added = -1;
+    std::vector<ParticleSet> sets;
+
+    for (int i = 0; i < size(); i++) {
+        if (particles[i].current_time == last_time_added) {
+            sets.back().add(get(i));
+            continue;
+        }
+        if (particles[i].current_time < last_time_added) {
+            throw std::runtime_error("Particles are not sorted in time.");
+        }
+        last_time_added = get(i).current_time;
+        sets.push_back(ParticleSet());
+        sets.back().add(get(i));
+    }
+    
+    return sets;
 }

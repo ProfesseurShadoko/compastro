@@ -148,10 +148,22 @@ public:
     Particle& get(int i);
 
     /**
+     * Split the set into all distinct time steps. Assumes particles are sorted in time from the beginning.
+     */
+    std::vector<ParticleSet> split();
+
+
+    /**
      * Slice. If start greater than end (eg if end = -1), all particles are added.
      */
     ParticleSet slice(int start, int end);
 
+    /**
+     * Take first N elements.
+     */
+    ParticleSet slice(int end) {
+        return slice(0, end);
+    }
 
     /**
      * @brief Get the number of particles in the set.
