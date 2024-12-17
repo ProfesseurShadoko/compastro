@@ -63,6 +63,12 @@ class Node {
      */
     Eigen::Vector3d getForce(Particle& particle, double theta, bool useQuadrupoles);
 
+    /**
+     * Same as getForce.
+     * TODO: implement this
+     */
+    double getPotential(Particle& particle, double theta, bool useQuadrupoles);
+
     static void save(std::ofstream& file, Node* node);
 
     /**
@@ -140,6 +146,11 @@ public:
      * get Force on a particle by descending the tree until opening angle condition is satisfied.
      */
     Eigen::Vector3d getForce(Particle& particle, double openingAngle);
+
+    /**
+     * get Potential on a particle by descending the tree until opening angle condition is satisfied.
+     */
+    double getPotential(Particle& particle, double openingAngle);
 
     /**
      * get all particles in the tree (for debugging purposes)

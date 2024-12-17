@@ -155,6 +155,58 @@ Eigen::Vector3d Node::getForce(Particle& particle, double theta, bool useQuadrup
 }
 
 
+double Node::getPotential(Particle& particle, double theta, bool useQuadrupoles) {
+    
+    /**
+     * ############
+     * ### LEAF ###
+     * ############ => simply compute the usual potential
+     */
+    if (isLeaf()) {
+        
+        if (this->particle == nullptr || *(this->particle) == particle) { // id comparison
+            return 0; // no potential if no particle / a particle doesn't apply a potential on itself
+        }
+        return Particle::computePotential(particle, *this->particle, ForceEngine::softening); // this is for now first order, we will add quadrupole later
+    }
+
+    /**
+     * ##################
+     * ### NOT A LEAF ###
+     * ################## => check opening angle condition
+     */
+    double distance = (centerOfMass - particle.position).norm();
+    if (halfWidth / distance < theta) { 
+        /**
+         * small parenthesis on theta: what happens when we compare a particle to itself?
+         * well centerOfMass is computed with the particle => particle is in the cube => distance to center should be less than halfwidth (except if center of mass is unluckily far away from cube center)
+         * halfWidth / distance > 1 => setting theta to more than 1 will bring isues here! theta should be at most 1 for debug
+         */
+
+        // ### OPENING ANGLE CONDITION SATISFIED ### // => return approximationwith center of mass (and potentially quadrupole)
+        Eigen::Vector3d r_tilde = particle.position - centerOfMass; // r_tilde = r-com
+        Particle pseudoParticle(centerOfMass, Eigen::Vector3d::Zero(), totalMass); // pseudo particle at center of mass
+        double monopole_force = Particle::computePotential(particle, pseudoParticle, ForceEngine::softening); // F = -GM/r^2
+
+        if (!useQuadrupoles) { // maybe we don't want to use quadrupoles yet
+            return monopole_force;
+        }   
+
+        // compute the quadrupole force
+        double rQr = r_tilde.transpose() * quadrupole * r_tilde;
+        double quadrupole_force = - 0.5 * rQr / pow(r_tilde.norm(), 5); // - 1/2 (rQr / r^5)
+        return monopole_force + quadrupole_force;
+    }
+
+    // ### OPENING ANGLE CONDITION NOT SATISFIED ### // => return sum of forces of children
+    double potential = 0;
+    for (int i = 0; i < 8; i++) {
+        potential += children[i]->getPotential(particle, theta, useQuadrupoles);
+    }
+    return potential;
+}
+
+
 
 /**
  * ####################
@@ -191,9 +243,15 @@ void Octree::clear() {
 }
 
 Eigen::Vector3d Octree::getForce(Particle& particle, double openingAngle) {
+    if (ForceEngine::alsoComputePotential) {
+        particle.potentialEnergy = getPotential(particle, openingAngle);
+    }
     return root->getForce(particle, openingAngle, useQuadrupoles);
 }
 
+double Octree::getPotential(Particle& particle, double openingAngle) {
+    return root->getPotential(particle, openingAngle, useQuadrupoles);
+}
 
 
 
