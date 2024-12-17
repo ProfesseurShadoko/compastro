@@ -76,8 +76,13 @@ Eigen::Vector3d Particle::computeForce(Particle& particle, Particle& p_attractor
     double r_squared = r.squaredNorm() + eps * eps;              // r^2 + eps^2
     double r_cubed = sqrt(r_squared) * r_squared;                // (r^2 + eps^2)^(3/2)
     return - (particle.mass * p_attractor.mass) / r_cubed * r;   // F = -GM/(r^2 + eps^2)^(3/2) * r
-
 }
+
+double Particle::computePotential(Particle& particle, Particle& p_attractor, double eps) {
+    double r = (particle.position - p_attractor.position).norm();
+    return - p_attractor.mass / pow(pow(r, 2) + pow(eps, 2), 0.5);
+}
+
 
 long long Particle::getForceCallCounter() {
     return forceCallCounter;
@@ -202,12 +207,12 @@ void ParticleSet::save(std::string path, ParticleSet particles) {
     if (!file.is_open()) {
         throw std::runtime_error("Could not open file.");
     }
-    file << "index,mass,x,y,z,vx,vy,vz,eps,phi" << std::endl; // phi becomes now just a stupid name for time
+    file << "index,mass,x,y,z,vx,vy,vz,eps,potential,t" << std::endl; // phi becomes now just a stupid name for time
 
     file << std::fixed << std::setprecision(30); // need high precision to evaluate rk2, who has precision up to 1e-15
     for (int i = 0; i < particles.size(); i++) {
         Particle p = particles.get(i);
-        file << p.getId() << "," << p.mass << "," << p.position(0) << "," << p.position(1) << "," << p.position(2) << "," << p.velocity(0) << "," << p.velocity(1) << "," << p.velocity(2) << "," << ForceEngine::softening << "," << p.current_time << std::endl;
+        file << p.getId() << "," << p.mass << "," << p.position(0) << "," << p.position(1) << "," << p.position(2) << "," << p.velocity(0) << "," << p.velocity(1) << "," << p.velocity(2) << "," << ForceEngine::softening << "," << p.potentialEnergy << "," << p.current_time << std::endl;
     }
 }
 

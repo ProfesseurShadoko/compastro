@@ -14,6 +14,7 @@ class Particle {
     Eigen::Vector3d velocity;
     double mass;
     double current_time = 0;
+    double potentialEnergy = 0;
     
 
 private:
@@ -63,6 +64,11 @@ public:
      * @brief Compute the force between two particles. This will return the force applied by the attractor on the particle!
      */
     static Eigen::Vector3d computeForce(Particle& particle, Particle& p_attractor, double eps = 0);
+
+    /**
+     * @brief Compute the potential applied by the attracotr on the particle.
+     */
+    static double computePotential(Particle& particle, Particle& p_attractor, double eps = 0);
 
     /**
      * @brief Counts how many times the function computeForce has been called. Reset the counter.
