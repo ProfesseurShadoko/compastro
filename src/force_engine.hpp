@@ -22,15 +22,18 @@ enum class IntegrationMethod {
 };
 
 
+
 class ForceEngine {
 public:
     static double softening;
     static double openingAngle;
+    static bool alsoComputePotential; // whether to, each time 'computeForce' is called, also compute potential and update potential energy value of particle.
     
     ParticleSet& particles; // avoid copy here! allows in place modification!
     
 
 private:
+    double fixed_radius = -1;
     /**
      * Direct computation of force between particles in O(n^2)
      */
@@ -87,7 +90,7 @@ public:
      * Steps 1. and 2. are done in the evolve method (overloaded).
      * If N_skip is 4, then only the 4th, 8th, 12th, ... particle set will be stored. Defaults to 1.
      */
-    ParticleSet evolve(double dt, Method method, IntegrationMethod i_method, int N_iter, int N_save = -1, int N_skip = 1);
+    ParticleSet evolve(double dt, Method method, IntegrationMethod i_method, int N_iter, int N_save = -1, int N_skip = 1, bool cap_radius = false);
 
     double crossingTime() const;
 };

@@ -7,7 +7,8 @@
 #include <iomanip>
 
 double ForceEngine::openingAngle = 0.5;
-double ForceEngine::softening = 0;
+double ForceEngine::softening = 0.00113221;
+bool ForceEngine::alsoComputePotential = true; // don't know if this is very time consuming,or if the tree construction is actually limiting factor
 
 
 
@@ -65,7 +66,7 @@ void ForceEngine::evolve(double dt, Method method, IntegrationMethod i_method) {
 }
 
 
-ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_method, int N_iter, int N_save, int N_skip) {
+ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_method, int N_iter, int N_save, int N_skip, bool cap_radius) {
 
     /**
      * -----------------------------
@@ -88,6 +89,11 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
     Message::print(" > Opening Angle: " + std::to_string(openingAngle));
     Message::print(" > Softening: " + std::to_string(softening));
     Message::print(" > Crossing Time: " + std::to_string(crossingTime()));
+
+    if (cap_radius) {
+        fixed_radius = particles.radius() * 10;
+        Message::print(" > Fixed Radius: " + std::to_string(fixed_radius));
+    }
 
 
     /**
@@ -113,6 +119,7 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
     forceCallCounter = Particle::getForceCallCounter() - forceCallCounter;
     Message::print(" > Force Call Counter: " + std::to_string(forceCallCounter));
     Message::print(" > Force Call Counter per Particle per Iteration: " + std::to_string((double) forceCallCounter / particles.size() / N_iter));
+    Message::print(" > Final radius: " + std::to_string(particles.radius()));
     timer.display();
     Message("Evolution complete!", "#");
 
@@ -152,9 +159,10 @@ std::vector<Eigen::Vector3d> ForceEngine::directForce() const {
 
 
 std::vector<Eigen::Vector3d> ForceEngine::treeForce(bool use_quad) const {
+    double radius = (fixed_radius == -1) ? particles.radius() : fixed_radius; // if particles get ejected it gets difficut for the tree // might want to fix a max radius
 
     std::vector<Eigen::Vector3d> forces(particles.size(), Eigen::Vector3d(0, 0, 0));
-    Octree tree(particles.radius());
+    Octree tree(radius); // doesn't care about outside of bunds particles
     tree.insert(particles);
     if (use_quad) {
         tree.computeQuadrupoles();
