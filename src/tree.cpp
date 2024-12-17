@@ -243,9 +243,6 @@ void Octree::clear() {
 }
 
 Eigen::Vector3d Octree::getForce(Particle& particle, double openingAngle) {
-    if (ForceEngine::alsoComputePotential) {
-        particle.potentialEnergy = getPotential(particle, openingAngle);
-    }
     return root->getForce(particle, openingAngle, useQuadrupoles);
 }
 

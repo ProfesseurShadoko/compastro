@@ -63,10 +63,7 @@ class Node {
      */
     Eigen::Vector3d getForce(Particle& particle, double theta, bool useQuadrupoles);
 
-    /**
-     * Same as getForce.
-     * TODO: implement this
-     */
+
     double getPotential(Particle& particle, double theta, bool useQuadrupoles);
 
     static void save(std::ofstream& file, Node* node);
