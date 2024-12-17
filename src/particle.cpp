@@ -176,6 +176,28 @@ double ParticleSet::radius() {
     return radius;
 }
 
+void ParticleSet::com() {
+    double m_tot = 0;
+    Eigen::Vector3d com = Eigen::Vector3d::Zero();
+    Eigen::Vector3d system_vel = Eigen::Vector3d::Zero();
+
+    for (int i=0; i<size(); i++) {
+        m_tot += get(i).mass;
+        com += get(i).mass * get(i).position;
+        system_vel += get(i).mass * get(i).velocity;
+    }
+
+    com /= m_tot;
+    system_vel /= m_tot;
+
+    // let's move everyone
+    for (int i=0; i<size(); i++) {
+        get(i).position -= com;
+        get(i).velocity -= system_vel;
+    }
+
+}
+
 
 void ParticleSet::updateCurrentTime(double dt) {
     for (size_t i = 0; i < particles.size(); i++) {

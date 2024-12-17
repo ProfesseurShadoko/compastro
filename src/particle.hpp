@@ -182,6 +182,11 @@ public:
     double radius();
 
     /**
+     * @brief changes velocities and positions to put everyone into center of mass frame, centered on 0
+     */
+    void com();
+
+    /**
      * Initialize the set with a number of particles, randomly distributed in a cube.
      */
     static ParticleSet load(std::string filename);
