@@ -312,7 +312,7 @@ std::vector<Particle*> Node::secondPass() {
     std::vector<Particle*> particles;
     if (isLeaf()) { // if empty, quadrupole is zero. if not empty, center of mass is particle, and thus quadurpole is also zero!
         if (particle != nullptr) {
-            particles.push_back(particle);
+            particles.push_back(particle); // we need to return all sub particles to the parent node for recursion
         }
         // quadrupole = Eigen::Matrix3d::Zero(); // is already initialized to zero for everyone
         return particles;

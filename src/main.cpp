@@ -244,37 +244,102 @@ void computeForcesVariousEpsilons() {
 
 }
 
+void computeTimeComplexity() {
 
-void testPotentialComputation() {
-    Particle p1 = Particle(
-        Eigen::Vector3d(0, 0, 0),
-        Eigen::Vector3d(1, 1, 0),
-        1.
-    );
+    ParticleSet particles = ParticleSet::load("files/data.txt");
+    int N_max = 50000;
+    int N_min = 10;
+    int N_steps = 50;
+    int N_repeat = 10;
+    Timer timer;
 
-    Particle p2 = Particle(
-        Eigen::Vector3d(1, 0, 0.5),
-        Eigen::Vector3d(0, 0, 0),
-        1.
-    );
+    std::vector<int> Ns;
+    // log scale since a complexity plot is in log log
+    for (int i=0; i<N_steps; i++) {
+        for (int _=0; _<N_repeat; _++) {
+            Ns.push_back(N_min * pow((N_max / N_min), (double)i/(N_steps - 1)));
+        }
+    }
+    Message("Data sizes initialized");
 
-    Particle p3 = Particle(
-        Eigen::Vector3d(-1, -0.5, -0.3),
-        Eigen::Vector3d(0.5, 0.5, 0.2),
-        2.
-    );
+    // --- Direct ---
+    Message("Direct Force Calculation");
+    ProgressBar bar_direct = ProgressBar(Ns.size());
+    std::vector<long> times_direct;
+    std::vector<long> iters_direct;
 
+    for (size_t n=0; n<Ns.size(); n++) {
+        ParticleSet particles_sub = particles.slice(Ns[n]);
+        ForceEngine engine = ForceEngine(particles_sub);
+        timer.start();
+        engine.computeForce(Method::direct);
+        times_direct.push_back(timer.stop());
+        iters_direct.push_back(Particle::popForceCallCounter());
+        bar_direct.update();
+    }
+    Message("Direct Force Calculation Complete", "#");
 
-    ParticleSet particles = {p1, p2, p3};
-    particles.com();
-    ForceEngine engine(particles);
+    // --- Tree Monopole ---
+    Message("Tree Monopole Force Calculation");
+    ProgressBar bar_tree_mono = ProgressBar(Ns.size());
+    std::vector<long> times_tree_mono;
+    std::vector<long> iters_tree_mono;
 
-    double dt = 0.001;
-    ParticleSet particles_over_time = engine.evolve(dt, Method::direct, IntegrationMethod::rk4, 10000, -1, 10);
-    ParticleSet::save("files/tests/3body_random.csv", particles_over_time);
+    for (size_t n=0; n<Ns.size(); n++) {
+        ParticleSet particles_sub = particles.slice(Ns[n]);
+        ForceEngine engine = ForceEngine(particles_sub);
+        timer.start();
+        engine.computeForce(Method::tree_mono);
+        times_tree_mono.push_back(timer.stop());
+        iters_tree_mono.push_back(Particle::popForceCallCounter());
+        bar_tree_mono.update();
+    }
 
-    Window window(particles_over_time, 10);
-    window.animate();
+    // --- Tree Quad ---
+    Message("Tree Quad Force Calculation");
+    ProgressBar bar_tree_quad = ProgressBar(Ns.size());
+    std::vector<long> times_tree_quad;
+    std::vector<long> iters_tree_quad;
+
+    for (size_t n=0; n<Ns.size(); n++) {
+        ParticleSet particles_sub = particles.slice(Ns[n]);
+        ForceEngine engine = ForceEngine(particles_sub);
+        timer.start();
+        engine.computeForce(Method::tree_quad);
+        times_tree_quad.push_back(timer.stop());
+        iters_tree_quad.push_back(Particle::popForceCallCounter());
+        bar_tree_quad.update();
+    }
+
+    // --- Just Tree Construction --- //
+    Message("Tree Construction");
+    ProgressBar bar_tree_construction = ProgressBar(Ns.size());
+    std::vector<long> times_tree_construction;
+    std::vector<long> times_second_pass;
+
+    for (size_t n=0; n<Ns.size(); n++) {
+        ParticleSet particles_sub = particles.slice(Ns[n]);
+        Octree tree = Octree(particles_sub.radius());
+        timer.start();
+        tree.insert(particles_sub);
+        times_tree_construction.push_back(timer.stop());
+
+        timer.start();
+        tree.computeQuadrupoles();
+        times_second_pass.push_back(timer.stop());
+        bar_tree_construction.update();
+    }
+
+    // --- Save the results ---
+    // into csv with columns N, direct, tree_mono, tree_quad, tree_construction, second_pass
+    std::ofstream file("files/output/time_complexity.csv");
+    file << "N,direct,tree_mono,tree_quad,tree_construction,second_pass,iter_direct,iter_mono,iter_quad" << std::endl;
+    for (size_t n=0; n<Ns.size(); n++) {
+        file << Ns[n] << "," << times_direct[n] << "," << times_tree_mono[n] << "," << times_tree_quad[n] << "," << times_tree_construction[n] << "," << times_second_pass[n] << "," << iters_direct[n] << "," << iters_tree_mono[n] << "," << iters_tree_quad[n] << std::endl;
+    }
+    file.close();
+    Message("Time Complexity Computation Complete", "#");
+    
 }
 
 
@@ -283,17 +348,7 @@ void testPotentialComputation() {
 
 
 int main() {
-    //ParticleSet particles = loadData();
-
-    //computeExactForcesOnData(particles);
-    //treeMonopoleOnData(particles);
-    //treeQuadOnData(particles);
-    //simulateMilkyWay();
-    //testGraphics();
-    //evolveData();
-    //computeForcesVariousEpsilons();
-
-    testPotentialComputation();
+    computeTimeComplexity();
 
     return 0;
 }

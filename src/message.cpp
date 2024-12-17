@@ -125,35 +125,28 @@ Timer::Timer() : name("DEFAULT"), status("EMPTY") {};
 
 Timer::Timer(std::string name) : name(name), status("EMPTY") {};
 
-Timer::Timer(std::string name, bool start) : name(name), status("EMPTY") {
-    if (start) this->start();
-};
-
-Timer::Timer(bool start) : name("DEFAULT"), status("EMPTY") {
-    if (start) this->start();
-};
-
 void Timer::start() {
-    if (status != "EMPTY") {
-        throw std::runtime_error("Timer has already been used before. Use a new one.");
+    if (status == "RUNNING") {
+        throw std::runtime_error("Timer is already running!");
     }
     status = "RUNNING";
-    start_time = std::chrono::high_resolution_clock::now();
+    start_time = std::chrono::high_resolution_clock::now(); // reset here!
 }
 
-void Timer::stop() {
+long long Timer::stop() {
     end_time = std::chrono::high_resolution_clock::now();
     if (status != "RUNNING") {
         throw std::runtime_error("Timer has not been started yet.");
     }
     status = "STOPPED";
+    return getTimeNs();
 }
 
 void Timer::display() {
     if (status != "STOPPED") {
         throw std::runtime_error("Timer has not been stopped yet.");
     }
-    long long ns_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
+    long long ns_time = getTimeNs();
     long long ms_time = ns_time / 1e6; // static cast to int
     long long s_time = ns_time / 1e9;
 
@@ -170,24 +163,13 @@ void Timer::display() {
     }
 }
 
-void Timer::display(bool stop) {
-    if (stop) this->stop();
-    display();
-}
-
-void Timer::reset() {
-    status = "EMPTY";
-}
-
-
-int Timer::getTime() {
+long long Timer::getTimeNs() {
     if (status != "STOPPED") {
         throw std::runtime_error("Timer has not been stopped yet.");
     }
     // time in ns
     return std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
 }
-
 
 /**
  * ###################

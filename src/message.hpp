@@ -99,18 +99,23 @@ private:
 public:
     Timer();
     Timer(std::string name);
-    Timer(std::string name, bool start);
-    Timer(bool start);
-    void start();
-    void stop();
-    void display(bool stop);
-    void display();
-    void reset();
 
     /**
-     * @brief Get the time in nanoseconds between the start and stop of the timer.
+     * Start the timer. If timer was stopped before, timer restarts from 0.
      */
-    int getTime();
+    void start();
+
+    /**
+     * Returns current time in ns.
+     */
+    long long stop();
+
+    /**
+     * print in the console the state of the timer only works if timer stopped.
+     */
+    void display();
+
+    long long getTimeNs();
 };
 
 
@@ -119,7 +124,6 @@ class ProgressBar {
 private:
     int length;
     int progress;
-    Timer timer;
     void display();
     static const int bar_length = 50;
     std::string previous_print = "zou!";
