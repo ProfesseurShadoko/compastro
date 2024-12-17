@@ -125,6 +125,14 @@ Timer::Timer() : name("DEFAULT"), status("EMPTY") {};
 
 Timer::Timer(std::string name) : name(name), status("EMPTY") {};
 
+Timer::Timer(std::string name, bool start) : name(name), status("EMPTY") {
+    if (start) this->start();
+};
+
+Timer::Timer(bool start) : name("DEFAULT"), status("EMPTY") {
+    if (start) this->start();
+};
+
 void Timer::start() {
     if (status != "EMPTY") {
         throw std::runtime_error("Timer has already been used before. Use a new one.");
@@ -161,6 +169,16 @@ void Timer::display() {
         Message::print(prefix + std::to_string(ns_time) + "ns");
     }
 }
+
+void Timer::display(bool stop) {
+    if (stop) this->stop();
+    display();
+}
+
+void Timer::reset() {
+    status = "EMPTY";
+}
+
 
 int Timer::getTime() {
     if (status != "STOPPED") {

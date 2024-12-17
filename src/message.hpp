@@ -99,9 +99,13 @@ private:
 public:
     Timer();
     Timer(std::string name);
+    Timer(std::string name, bool start);
+    Timer(bool start);
     void start();
     void stop();
+    void display(bool stop);
     void display();
+    void reset();
 
     /**
      * @brief Get the time in nanoseconds between the start and stop of the timer.
