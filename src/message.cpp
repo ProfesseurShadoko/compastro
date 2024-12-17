@@ -197,15 +197,12 @@ int Timer::getTime() {
 
 bool ProgressBar::muted = false;
 
-
 ProgressBar::ProgressBar(int length) : length(length), progress(0) {
     display();
 }
 
 void ProgressBar::display() {
-    if (muted) {
-        return;
-    }
+    
     std::string incomplete = "━";
     std::string complete = cstr("━").blue();
     int n_complete = ((progress * bar_length) / length);
@@ -226,8 +223,15 @@ void ProgressBar::display() {
     }
 
     std::string progress_percent_str = cstr(std::to_string(progress_percent) + "%").red();
+    std::string next_print = "\r" + cstr("[%]").blue() + " Progress: " + bar + " (" + progress_percent_str + ")";
 
-    std::cout << "\r" << cstr("[%]").blue() <<" Progress: " << bar << " (" << progress_percent_str << ")" << std::flush;
+    if (next_print != previous_print) {
+        std::cout << next_print << std::flush;
+        previous_print = next_print;
+    }
+
+
+    
 }
 
 void ProgressBar::update() {

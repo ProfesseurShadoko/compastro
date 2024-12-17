@@ -122,6 +122,7 @@ private:
     Timer timer;
     void display();
     static const int bar_length = 50;
+    std::string previous_print = "zou!";
     static bool muted;
 
 
