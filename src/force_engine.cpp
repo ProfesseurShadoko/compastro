@@ -8,8 +8,6 @@
 
 double ForceEngine::openingAngle = 0.5;
 double ForceEngine::softening = 0.00113221;
-bool ForceEngine::alsoComputePotential = true; // don't know if this is very time consuming,or if the tree construction is actually limiting factor
-
 
 
 /**

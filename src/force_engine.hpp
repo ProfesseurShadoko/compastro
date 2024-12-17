@@ -27,8 +27,6 @@ class ForceEngine {
 public:
     static double softening;
     static double openingAngle;
-    static bool alsoComputePotential; // whether to, each time 'computeForce' is called, also compute potential and update potential energy value of particle.
-    
     ParticleSet& particles; // avoid copy here! allows in place modification!
     
 

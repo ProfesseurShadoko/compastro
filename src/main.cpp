@@ -8,6 +8,7 @@
 #include "force_engine.hpp"
 #include "tree.hpp"
 #include "message.hpp"
+#include "graphics.hpp"
 
 
 
@@ -118,29 +119,165 @@ void testIntegrationMethods() {
 
 void simulateMilkyWay() {
     ParticleSet particles = ParticleSet::load("files/tests/galaxy/milkyway.txt");
+    ForceEngine engine(particles);
 
     double softening = 0.01; // 1% of R
     double crossing_time = 1.0;
-    double dt = crossing_time / 100;
+    double dt = crossing_time / 50;
     int N_iter = 3000;
-    int N_save = -1; // -1 means all of them
-    int N_skip = 3;
+    int N_save = 1000; // -1 means all of them
+    int N_skip = 10;
 
     ForceEngine::softening = softening;
     ForceEngine::openingAngle = 0.5;
 
-    /**
-     * Let's start by computing the initial forces. We want to check whether the iitial velocity conditions match circular orbits!
-     */
     ForceEngine engine_initial(particles);
-    std::vector<Eigen::Vector3d> forces = engine_initial.computeForce(Method::direct); // we want exact result here
-    ParticleSet::saveForces("files/tests/galaxy/milkyway_initial_forces.csv", forces);
 
-    ForceEngine engine(particles);
-    ParticleSet over_time = engine.evolve(dt, Method::tree_quad, IntegrationMethod::rk4, N_iter, N_save,N_skip);
+    
+    ParticleSet over_time = engine.evolve(dt, Method::tree_mono, IntegrationMethod::symplectic, N_iter, N_save,N_skip);
 
     ParticleSet::save("files/tests/galaxy/milkyway_over_time.csv", over_time);
 }
+
+
+void testGraphics() {
+    ParticleSet particles = ParticleSet::load("files/tests/galaxy/milkyway.txt");
+    ForceEngine engine(particles);
+
+    ForceEngine::softening = 0.03;
+    double dt = engine.crossingTime() / 50;
+    int N_iter = 10000;
+    int N_save = 3000;
+    int N_skip = 10;
+    double radius = particles.radius()/1.4; // need to fix it here, later particles get ejected
+
+    ParticleSet particles_over_time = engine.evolve(dt, Method::tree_mono, IntegrationMethod::symplectic, N_iter, N_save, N_skip, true);
+    
+    Window window(particles_over_time, radius);
+    window.animate();
+}
+
+void evolveData() {
+    ParticleSet particles = ParticleSet::load("files/data.txt");
+    ForceEngine engine(particles);
+
+    ForceEngine::softening = 0.01;
+    double dt = engine.crossingTime() / 50;
+    int N_iter = 100;
+    int N_save = 10000;
+    int N_skip = 1;
+    double radius = 1;
+
+    ParticleSet particles_over_time = engine.evolve(dt, Method::tree_mono, IntegrationMethod::symplectic, N_iter, N_save, N_skip, true);
+    Window window(particles_over_time, radius);
+    window.animate();
+}
+
+void computeForcesVariousEpsilons() {
+    ParticleSet particles = ParticleSet::load("files/data.txt"); // 50000 of them, a lot
+    double R = 1;
+    int N = particles.size();
+    double m = particles.get(0).mass;
+    double M_tot = m * N; // we assume all have same mass, which is the case
+    //double G = 1;
+
+    // let's create our array of epsilons
+    double min_epsilon = R / N * 0.1;
+    double max_epsilon = R / 100 * 10;
+    double eps;
+    int n_epsilon = 100;
+    std::vector<double> epsilons;
+ 
+    std::cout << "Min epsilon: " << min_epsilon << std::endl;
+    std::cout << "Max epsilon: " << max_epsilon << std::endl;
+    if (max_epsilon < min_epsilon) throw("Not enough epsilon range");
+    
+
+    for (int i=0; i<n_epsilon; i++) {
+        //eps = min_epsilon + i*(max_epsilon - min_epsilon) / (n_epsilon-1);
+        // lets do log norm rather
+        eps = min_epsilon * pow((max_epsilon / min_epsilon), (double)i/(n_epsilon - 1));
+        epsilons.push_back(eps);
+        //std::cout << "Current Epsilon: " << eps << std::endl;
+    }
+
+    // let's compute the forces for each one of them
+    Method method = Method::tree_quad;
+    ProgressBar bar = ProgressBar(n_epsilon);
+    ForceEngine engine = ForceEngine(particles);
+
+    std::vector<double> errors;
+    double error;
+    double fr;
+    double f_theoretical;
+    double a=0.08;
+    Eigen::Vector3d r;
+    /*
+    # theoretical curve
+    def f(r, a=0.08):
+        return -M*m / (r+a)**2
+    */
+    for (int i=0; i<n_epsilon; i++) {
+        error = 0;
+        ForceEngine::softening = epsilons[i];
+        std::vector<Eigen::Vector3d> forces = engine.computeForce(method);
+
+        // let's compute the sqaured error as 
+        for (int j=0; j<particles.size(); j++) {
+            r = particles.get(j).position;
+            f_theoretical = -M_tot * m / pow(r.norm()+a, 2);
+            fr = (forces[j](0) * r(0) + forces[j](1) * r(1) + forces[j](2) * r(2))/r.norm();
+            error += pow(f_theoretical - fr, 2);
+        }
+        bar.update();
+        errors.push_back(error);
+    }
+
+    // let's dispaly the results:
+    std::cout << "[";
+    for (int i=0; i<n_epsilon; i++) {
+        eps = epsilons[i];
+        error = errors[i];
+        std::cout << "[" << eps << "," << error << "],";
+    }
+    std::cout << "]" << std::endl;
+
+}
+
+
+void testPotentialComputation() {
+    Particle p1 = Particle(
+        Eigen::Vector3d(0, 0, 0),
+        Eigen::Vector3d(1, 1, 0),
+        1.
+    );
+
+    Particle p2 = Particle(
+        Eigen::Vector3d(1, 0, 0.5),
+        Eigen::Vector3d(0, 0, 0),
+        1.
+    );
+
+    Particle p3 = Particle(
+        Eigen::Vector3d(-1, -0.5, -0.3),
+        Eigen::Vector3d(0.5, 0.5, 0.2),
+        2.
+    );
+
+
+    ParticleSet particles = {p1, p2, p3};
+    particles.com();
+    ForceEngine engine(particles);
+
+    double dt = 0.001;
+    ParticleSet particles_over_time = engine.evolve(dt, Method::direct, IntegrationMethod::rk4, 10000, -1, 10);
+    ParticleSet::save("files/tests/3body_random.csv", particles_over_time);
+
+    Window window(particles_over_time, 10);
+    window.animate();
+}
+
+
 
 
 
@@ -151,6 +288,12 @@ int main() {
     //computeExactForcesOnData(particles);
     //treeMonopoleOnData(particles);
     //treeQuadOnData(particles);
-    simulateMilkyWay();
+    //simulateMilkyWay();
+    //testGraphics();
+    //evolveData();
+    //computeForcesVariousEpsilons();
+
+    testPotentialComputation();
+
     return 0;
 }
