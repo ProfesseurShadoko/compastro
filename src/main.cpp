@@ -9,6 +9,7 @@
 #include "tree.hpp"
 #include "message.hpp"
 #include "graphics.hpp"
+#include "direct_force_gpu.hpp"
 
 
 
@@ -146,7 +147,7 @@ void testGraphics() {
 
     ForceEngine::softening = 0.03;
     double dt = engine.crossingTime() / 50;
-    int N_iter = 10000;
+    int N_iter = 8000;
     int N_save = 3000;
     int N_skip = 10;
     double radius = particles.radius()/1.4; // need to fix it here, later particles get ejected
@@ -343,12 +344,29 @@ void computeTimeComplexity() {
 }
 
 
+void runGPU() {
+    Particle p1 = Particle(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), 1);
+    Particle p2 = Particle(Eigen::Vector3d(1, 0, 0), Eigen::Vector3d(0, 0, 0), 1);
+
+    ParticleSet particles = {p1, p2};
+
+    DirectForceGPU::checkDevices();
+    DirectForceGPU gpu = DirectForceGPU(particles);
+    std::vector<Eigen::Vector3d> forces = gpu.computeForces();
+
+    std::cout << "GPU says: " << forces[0].transpose() << std::endl;
+
+    ForceEngine engine(particles);
+    forces = engine.computeForce(Method::direct);
+    std::cout << "CPU says: " << forces[0].transpose() << std::endl;
+}
+
+
 
 
 
 
 int main() {
-    computeTimeComplexity();
-
+    runGPU();
     return 0;
 }

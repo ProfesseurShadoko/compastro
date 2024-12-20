@@ -1,9 +1,9 @@
 # Compiler and flags
 CXX := g++
-CXXFLAGS := -Wall -O2 -I/usr/include/eigen3 -MMD -MP
+CXXFLAGS := -Wall -O2 -I/usr/include/eigen3 -MMD -MP -DCL_TARGET_OPENCL_VERSION=300
 
 # Library dependencies
-FFTW_LIB := -lfftw3 -lm -lsfml-graphics -lsfml-window -lsfml-system
+LIB := -lfftw3 -lm -lsfml-graphics -lsfml-window -lsfml-system -lOpenCL
 
 # Project structure
 SRC_DIR := src
@@ -24,7 +24,7 @@ all: $(TARGET) run
 $(TARGET): $(OBJECTS)
 	@mkdir -p $(BUILD_DIR)
 	@echo "Linking object files into $(TARGET)..."
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS) $(FFTW_LIB)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS) $(LIB)
 
 # Rule to compile source files into object files
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
