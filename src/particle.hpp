@@ -66,7 +66,7 @@ public:
     static Eigen::Vector3d computeForce(Particle& particle, Particle& p_attractor, double eps = 0);
 
     /**
-     * @brief Compute the potential applied by the attracotr on the particle.
+     * @brief Compute the potential applied by the attracotr on the particle. Returns normalized potential (for actual potential, multiply by particle mass!).
      */
     static double computePotential(Particle& particle, Particle& p_attractor, double eps = 0);
 

@@ -195,7 +195,7 @@ double Node::getPotential(Particle& particle, double theta, bool useQuadrupoles)
         // compute the quadrupole force
         double rQr = r_tilde.transpose() * quadrupole * r_tilde;
         double quadrupole_force = - 0.5 * rQr / pow(r_tilde.norm(), 5); // - 1/2 (rQr / r^5)
-        return monopole_force + quadrupole_force;
+        return monopole_force + quadrupole_force; // we choose to always return the normalized potential (like electrmagntism with charge). for actual potential, multiply by particle.mass
     }
 
     // ### OPENING ANGLE CONDITION NOT SATISFIED ### // => return sum of forces of children

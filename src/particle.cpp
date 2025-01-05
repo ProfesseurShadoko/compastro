@@ -82,8 +82,8 @@ Eigen::Vector3d Particle::computeForce(Particle& particle, Particle& p_attractor
 }
 
 double Particle::computePotential(Particle& particle, Particle& p_attractor, double eps) {
-    double r = (particle.position - p_attractor.position).norm();
-    return - p_attractor.mass / pow(pow(r, 2) + pow(eps, 2), 0.5);
+    double r2 = (particle.position - p_attractor.position).squaredNorm();
+    return - p_attractor.mass / std::sqrt(r2 + eps*eps);
 }
 
 
