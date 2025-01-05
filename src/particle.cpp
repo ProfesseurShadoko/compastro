@@ -29,12 +29,14 @@ Particle::Particle(Eigen::Vector3d position, Eigen::Vector3d velocity, double ma
     this->id = id_counter++;
 }
 
+// COPY OPERATOR
 Particle::Particle(const Particle& p) {
     this->position = p.position; // this gets effectively copied
     this->velocity = p.velocity;
     this->mass = p.mass;
     this->current_time = p.current_time;
     this->id = p.id;
+    this->potentialEnergy = p.potentialEnergy;
 }
 
 Particle::Particle(std::initializer_list<double> init) {
@@ -52,10 +54,11 @@ void Particle::updateCurrentTime(double dt) {
 }
 
 void Particle::display() {
-    std::cout << "Particle <" + std::to_string(id) + ">:" << std::endl;
+    std::cout << "Particle[t=" << current_time << "]<" + std::to_string(id) + ">:" << std::endl;
     std::cout << "\t- Position: " << position.transpose() << std::endl;
     std::cout << "\t- Velocity: " << velocity.transpose() << std::endl;
     std::cout << "\t- Mass: " << mass << std::endl;
+    std::cout << "\t- Potential Energy: " << potentialEnergy << std::endl;
     std::cout << std::endl;
 }
 
