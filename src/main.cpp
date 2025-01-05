@@ -9,7 +9,6 @@
 #include "tree.hpp"
 #include "message.hpp"
 #include "graphics.hpp"
-#include "direct_force_gpu.hpp"
 
 
 
@@ -143,6 +142,7 @@ void simulateMilkyWay() {
 
 void testGraphics() {
     ParticleSet particles = ParticleSet::load("files/tests/galaxy/milkyway.txt");
+    particles = particles.slice(1000);
     ForceEngine engine(particles);
 
     ForceEngine::softening = 0.03;
@@ -344,29 +344,17 @@ void computeTimeComplexity() {
 }
 
 
-void runGPU() {
-    Particle p1 = Particle(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), 1);
-    Particle p2 = Particle(Eigen::Vector3d(1, 0, 0), Eigen::Vector3d(0, 0, 0), 1);
-
-    ParticleSet particles = {p1, p2};
-
-    DirectForceGPU::checkDevices();
-    DirectForceGPU gpu = DirectForceGPU(particles);
-    std::vector<Eigen::Vector3d> forces = gpu.computeForces();
-
-    std::cout << "GPU says: " << forces[0].transpose() << std::endl;
-
+void testPotentials() {
+    ParticleSet particles = ParticleSet::load("files/data.txt");
+    
     ForceEngine engine(particles);
-    forces = engine.computeForce(Method::direct);
-    std::cout << "CPU says: " << forces[0].transpose() << std::endl;
-}
-
-
-
+    ForceEngine::compute_potential = true;
+    engine.evolve(1e-3, Method::tree_mono, IntegrationMethod::symplectic, 100, 1, 1);
+};
 
 
 
 int main() {
-    runGPU();
+    testPotentials();
     return 0;
 }
