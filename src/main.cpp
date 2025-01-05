@@ -195,7 +195,8 @@ void evolveData() {
     int N_skip = 1;
     double radius = 1;
 
-    ParticleSet particles_over_time = engine.evolve(dt, Method::tree_mono, IntegrationMethod::symplectic, N_iter, N_save, N_skip, true);
+    ParticleSet particles_over_time = engine.evolve(dt, Method::tree_quad, IntegrationMethod::rk4, N_iter, N_save, N_skip, true);
+    ParticleSet::save("files/output/data_over_time.csv", particles_over_time);
     Window window(particles_over_time, radius);
     window.animate();
 }
@@ -398,15 +399,24 @@ void testPotentials() {
 
 
 int main() {
-    //testPotentials();
-    //testIntegrationMethods();
+    //evolveData();
+    Particle p1 = Particle(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), 100);
+    Particle p2 = Particle(Eigen::Vector3d(2, 0, 0), Eigen::Vector3d(0, -7, 0), 1);
+    Particle p3 = Particle(Eigen::Vector3d(0, 1, 0), Eigen::Vector3d(10, 0, 0), 1);
+    Particle p4 = Particle(Eigen::Vector3d(4, 3, 0), Eigen::Vector3d(3, -3, 0), 1);
+    ParticleSet particles = {p1, p2, p3, p4};
+    particles.com();
 
-    ParticleSet particles = ParticleSet::load("files/data.txt");
-    ForceEngine::softening = 0;
-    computeExactForcesOnData(particles);
-    treeMonopoleOnData(particles);
-    treeQuadOnData(particles);
-    
+    ForceEngine engine(particles);
+    engine.computePotential(Method::direct);
+    double energy = particles.totalEnergy();
+    std::cout << "Total Energy: " << energy << std::endl;
+
+    ParticleSet particles_over_time = engine.evolve(0.001, Method::direct, IntegrationMethod::rk4, 10000, 4, 20, true);
+    Window window(particles_over_time, 10);
+    window.animate();
+
+    std::cout << "Total Energy: " << particles.totalEnergy() << std::endl;
 
     return 0;
 }
