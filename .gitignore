@@ -2,7 +2,10 @@
 build/
 
 # ignore the files
-files/
+*.csv
+*.gif
+*.pdf
+*.txt
 
 # ignore trash directory
 trash/
