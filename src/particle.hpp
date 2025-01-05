@@ -116,10 +116,6 @@ public:
      */
     ParticleSet(const ParticleSet& ps);
 
-    /**
-     * Calls the applyForce method for each particle in the set. Calls resetForces first. This means that new forces erase previous ones.
-     */
-    void applyForces(std::vector<Eigen::Vector3d> forces);
 
     /**
      * Increments current time of each particle by dt.
