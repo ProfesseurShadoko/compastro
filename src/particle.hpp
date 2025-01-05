@@ -183,6 +183,11 @@ public:
     void com();
 
     /**
+     * @brief returns sum of kinetic energy and potential energy of the system
+     */
+    double totalEnergy();
+
+    /**
      * Initialize the set with a number of particles, randomly distributed in a cube.
      */
     static ParticleSet load(std::string filename);

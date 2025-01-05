@@ -133,6 +133,10 @@ ParticleSet ParticleSet::slice(int start, int end) {
         end = particles.size();
     }
 
+    if (end > (int)particles.size()) {
+        throw std::runtime_error("End index out of bounds.");
+    }
+
     for (int i = start; i < end; i++) {
         ps.add(get(i));
     }
@@ -199,6 +203,17 @@ void ParticleSet::com() {
         get(i).velocity -= system_vel;
     }
 
+}
+
+double ParticleSet::totalEnergy() {
+    double kinetic = 0;
+    double potential = 0;
+    for (int i = 0; i < size(); i++) {
+        Particle p = get(i);
+        kinetic += 0.5 * p.mass * p.velocity.squaredNorm();
+        potential += p.potentialEnergy * p.mass;
+    }
+    return kinetic + potential * 0.5; // we have to divide by 2 because we have double counted the potential energy
 }
 
 
