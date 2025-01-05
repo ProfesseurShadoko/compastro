@@ -35,6 +35,9 @@ std::vector<Eigen::Vector3d> ForceEngine::computeForce(Method method) {
 }
 
 std::vector<double> ForceEngine::computePotential(Method method) {
+    if (!compute_potential) {
+        Message("Potential computation is disabled, bu called anyway!", "!");
+    }
     //std::cout << "Computing potential" << std::endl;
     std::vector<double> potentials;
     
@@ -247,7 +250,6 @@ std::vector<double> ForceEngine::treePotential(bool use_quad) {
     }
     
     return potentials;
-
 }
 
 

@@ -77,7 +77,7 @@ Eigen::Vector3d Particle::computeForce(Particle& particle, Particle& p_attractor
     forceCallCounter++;
     Eigen::Vector3d r = particle.position - p_attractor.position; // u_r goes from p_attractor to our particle
     double r_squared = r.squaredNorm() + eps * eps;              // r^2 + eps^2
-    double r_cubed = sqrt(r_squared) * r_squared;                // (r^2 + eps^2)^(3/2)
+    double r_cubed = sqrt(r_squared) * r_squared;                // (r^2 + eps^2)^(3/2) // avoid using pow! time consuming!
     return - (particle.mass * p_attractor.mass) / r_cubed * r;   // F = -GM/(r^2 + eps^2)^(3/2) * r
 }
 

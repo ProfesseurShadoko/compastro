@@ -33,7 +33,14 @@ void computeExactForcesOnData(ParticleSet& particles) {
     timer.stop();
     timer.display();
 
+    Timer timer2("Direct Solver (Potential)");
+    timer2.start();
+    engine.computePotential(Method::direct);
+    timer2.stop();
+    timer2.display();
+
     ParticleSet::saveForces("files/output/DIRECT_FORCES_eps=" + std::to_string(engine.softening) + "_data.csv", forces);
+     ParticleSet::save("files/output/DIRECT_POTENTIAL_data.csv", particles);
     std::cout << "Force call count (direct): " << Particle::popForceCallCounter() << std::endl;
 
 }
@@ -46,7 +53,16 @@ void treeMonopoleOnData(ParticleSet& particles) {
     std::vector<Eigen::Vector3d> forces_tree_mono = engine.computeForce(Method::tree_mono);
     timer.stop();
     timer.display();
+
+    Timer timer2("Direct Solver (Potential)");
+    timer2.start();
+    engine.computePotential(Method::tree_mono);
+    timer2.stop();
+    timer2.display();
+
+
     ParticleSet::saveForces("files/output/TREE-MONO_FORCES_data.csv", forces_tree_mono);
+    ParticleSet::save("files/output/TREE-MONO_POTENTIAL_data.csv", particles);
 
     std::cout << "Force call count (monopole):" << Particle::popForceCallCounter() << std::endl;
 }
@@ -60,8 +76,17 @@ void treeQuadOnData(ParticleSet& particles) {
     std::vector<Eigen::Vector3d> forces_tree_quad = engine.computeForce(Method::tree_quad);
     timer.stop();
     timer.display();
+
+    Timer timer2("Direct Solver (Potential)");
+    timer2.start();
+    engine.computePotential(Method::tree_quad);
+    timer2.stop();
+    timer2.display();
+
     ParticleSet::saveForces("files/output/TREE-QUAD_FORCES_data.csv", forces_tree_quad);
     std::cout << "Force call count (quadrupole):" << Particle::popForceCallCounter() << std::endl;
+
+    ParticleSet::save("files/output/TREE-QUAD_POTENTIAL_data.csv", particles);
 
 }
 
@@ -374,6 +399,14 @@ void testPotentials() {
 
 int main() {
     //testPotentials();
-    testIntegrationMethods();
+    //testIntegrationMethods();
+
+    ParticleSet particles = ParticleSet::load("files/data.txt");
+    ForceEngine::softening = 0;
+    computeExactForcesOnData(particles);
+    treeMonopoleOnData(particles);
+    treeQuadOnData(particles);
+    
+
     return 0;
 }
