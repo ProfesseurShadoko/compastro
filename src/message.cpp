@@ -247,3 +247,21 @@ void ProgressBar::mute() {
 void ProgressBar::unmute() {
     muted = false;
 }
+
+void ProgressBar::print(std::string msg) {
+   
+    if (muted) {
+        std::cout << msg << std::endl;
+        return;
+    }
+
+    // print one empty line to erase the line. then go back to front of line.
+    std::string empty_line = "\r";
+    for (size_t i=0; i<bar_length*2; i++) {
+        empty_line += " ";
+    }
+    std::cout << empty_line << std::flush;
+    std::cout << "\r" << msg << std::endl;
+    std::cout << previous_print << std::flush;
+    
+}
