@@ -35,20 +35,33 @@ std::vector<Eigen::Vector3d> ForceEngine::computeForce(Method method) {
 }
 
 std::vector<double> ForceEngine::computePotential(Method method) {
+    //std::cout << "Computing potential" << std::endl;
+    std::vector<double> potentials;
     
     switch (method) {
         case Method::direct:
-            return directPotential();
+            potentials = directPotential();
+            break;
         
         case Method::tree_mono:
-            return treePotential(false);
+            potentials =  treePotential(false);
+            break;
 
         case Method::tree_quad:
-            return treePotential(true);
+            potentials = treePotential(true);
+            break;
 
         default:
             throw std::runtime_error("Method not implemented.");
     }
+
+    // let's assign the potentials to the particles
+    for (int i=0; i<particles.size(); i++) {
+        particles.get(i).potentialEnergy = potentials[i];
+    }
+    //std::cout << "Potentials[0]: " << potentials[0] << std::endl;
+    //std::cout << particles.get(0).potentialEnergy << std::endl;
+    return potentials;
 }
 
 
@@ -79,6 +92,8 @@ void ForceEngine::evolve(double dt, Method method, IntegrationMethod i_method) {
         default:
             throw std::runtime_error("Integration Method not implemented.");
     }
+
+    if (compute_potential) computePotential(method); // no that we moved our particles, we need to update their potentials
 }
 
 
@@ -102,7 +117,9 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
     ss << std::scientific << std::setprecision(1) << ((double)N_iter * real_n_save / N_skip);
 
     Message::print(" > Total number of particles saved: " + cstr(ss.str()).yellow());
-    Message::print(" > Compute potentials: " + std::to_string(compute_potential));
+
+    std::string compute_str = (compute_potential ? cstr("True").green() : cstr("False").red());
+    Message::print(" > Compute potentials: " + compute_str);
     Message::print(" > Opening Angle: " + std::to_string(openingAngle));
     Message::print(" > Softening: " + std::to_string(softening));
     Message::print(" > Crossing Time: " + std::to_string(crossingTime()));
@@ -113,13 +130,10 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
     }
 
 
-    if (compute_potential) {
-        std::vector<double> potentials = computePotential(method);
-        for (int i=0; i<particles.size(); i++) {
-            particles.get(i).potentialEnergy = potentials[i];
-        }
-    }
-
+    if (compute_potential) computePotential(method); // also assigns the potentials
+    
+    //std::cout << "Initial particle" << std::endl;
+    //particles.get(0).display();
 
     /**
      * ---------------------
@@ -135,16 +149,9 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
     timer.start();
     for (int i=0; i<N_iter; i++) {
         bar.update();
-        evolve(dt, method, i_method);
+        evolve(dt, method, i_method); // potentials get assgned again here
         if (i % N_skip != 0) continue; // only one out of N_skip steps get saved
-
-        if (compute_potential) { // compute potential only for those we save
-            std::vector<double> potentials = computePotential(method);
-            for (int i=0; i<particles.size(); i++) {
-                particles.get(i).potentialEnergy = potentials[i];
-            }
-        }
-
+        
         particles_over_time.add(particles.slice(0, N_save));
     }
     timer.stop();
@@ -155,6 +162,8 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
     Message::print(" > Final radius: " + std::to_string(particles.radius()));
     timer.display();
     Message("Evolution complete!", "#");
+
+    
 
     return particles_over_time;
 }
