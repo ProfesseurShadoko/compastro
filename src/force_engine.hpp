@@ -28,6 +28,7 @@ public:
     static double softening;
     static double openingAngle;
     static bool compute_potential;
+    static bool displayEnergyConservation;
     ParticleSet& particles; // avoid copy here! allows in place modification!
     
 

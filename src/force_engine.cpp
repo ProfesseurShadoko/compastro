@@ -9,6 +9,7 @@
 double ForceEngine::openingAngle = 0.5;
 double ForceEngine::softening = 0.00113221;
 bool ForceEngine::compute_potential = true;
+bool ForceEngine::displayEnergyConservation = true;
 
 
 /**
@@ -116,6 +117,7 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
     Message::print(" > Number of iterations to skip: " + std::to_string(N_skip));
 
     int  real_n_save = (N_save==-1) ? particles.size() : N_save;
+    real_n_save = std::min(real_n_save, particles.size());
     std::stringstream ss;
     ss << std::scientific << std::setprecision(1) << ((double)N_iter * real_n_save / N_skip);
 
@@ -145,7 +147,7 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
      */
 
     ProgressBar bar(N_iter);
-    ParticleSet particles_over_time = ParticleSet(particles).slice(0, N_save); // snapshot of the particles
+    ParticleSet particles_over_time = ParticleSet(particles).slice(0, real_n_save); // snapshot of the particles
     long long forceCallCounter = Particle::getForceCallCounter();
     Timer timer("Evolve function: (" + std::to_string((int) method) + ", " + std::to_string((int) i_method) + ")");
 
@@ -155,7 +157,7 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
         evolve(dt, method, i_method); // potentials get assgned again here
         if (i % N_skip != 0) continue; // only one out of N_skip steps get saved
         
-        particles_over_time.add(particles.slice(0, N_save));
+        particles_over_time.add(particles.slice(0, real_n_save));
     }
     timer.stop();
 
@@ -167,7 +169,6 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
     Message("Evolution complete!", "#");
 
     
-
     return particles_over_time;
 }
 
