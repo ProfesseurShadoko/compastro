@@ -184,6 +184,10 @@ ProgressBar::ProgressBar(int length) : length(length), progress(0) {
 }
 
 void ProgressBar::display() {
+
+    if (muted) {
+        return; // might be redundant with other stuff, but just in case
+    }
     
     std::string incomplete = "━";
     std::string complete = cstr("━").blue();
@@ -218,6 +222,11 @@ void ProgressBar::display() {
 
 void ProgressBar::update() {
     progress++;
+
+    if (muted) {
+        return; // no display, but still update
+    }
+
     display();
 
     if (progress == length) {
