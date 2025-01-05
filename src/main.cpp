@@ -114,8 +114,8 @@ void testIntegrationMethods() {
     ParticleSet::save("files/tests/integration_methods_notebook/rk4.csv", rk4_over_time);
     ParticleSet::save("files/tests/integration_methods_notebook/symplectic.csv", symplectic_over_time);
 
-    std::cout << "System:" << std::endl;
-    system.get(0).display();
+    std::cout << "System RK4:" << std::endl;
+    rk4_over_time.get(0).display();
 }
 
 void simulateMilkyWay() {
@@ -346,16 +346,34 @@ void computeTimeComplexity() {
 
 
 void testPotentials() {
-    ParticleSet particles = ParticleSet::load("files/data.txt");
+    Particle sun = Particle(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), 1);
+    double dt = 1e-3;
+    ForceEngine::softening = 0;
+
+    double e = 0.5; // eccentricity // in plane x-y
+    Particle earth = Particle(Eigen::Vector3d(1, 0, 0), Eigen::Vector3d(0, sqrt(1 + e), 0), 1e-30); // we want the sun to stay still
+    // initial velocity is sqrt(1 + e)
+
+    int N_iter = 53315;
+    ParticleSet system = {earth, sun};
+
+    ForceEngine engine(system);
+    engine.computePotential(Method::direct);
+    engine.particles.get(0).display();
+
+    // --- RK4 ---
+    ParticleSet rk4_system = system; // deep copy
+    ForceEngine rk4_engine = ForceEngine(rk4_system);
+    ParticleSet rk4_over_time = rk4_engine.evolve(dt, Method::direct, IntegrationMethod::rk4, N_iter, 2); // we always use direct method here
+    rk4_over_time.get(0).display();
     
-    ForceEngine engine(particles);
-    ForceEngine::compute_potential = true;
-    engine.evolve(1e-3, Method::tree_mono, IntegrationMethod::symplectic, 100, 1, 1);
+    
 };
 
 
 
 int main() {
+    //testPotentials();
     testIntegrationMethods();
     return 0;
 }
