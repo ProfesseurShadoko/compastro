@@ -69,6 +69,7 @@ void treeQuadOnData(ParticleSet& particles) {
 void testIntegrationMethods() {
     Particle sun = Particle(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), 1);
     double dt = 1e-3;
+    ForceEngine::softening = 0;
 
     double e = 0.5; // eccentricity // in plane x-y
     Particle earth = Particle(Eigen::Vector3d(1, 0, 0), Eigen::Vector3d(0, sqrt(1 + e), 0), 1e-30); // we want the sun to stay still
@@ -355,6 +356,6 @@ void testPotentials() {
 
 
 int main() {
-    testPotentials();
+    testIntegrationMethods();
     return 0;
 }
