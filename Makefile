@@ -1,6 +1,6 @@
 # Compiler and flags
 CXX := g++
-CXXFLAGS := -Wall -O2 -I/usr/include/eigen3 -MMD -MP -DCL_TARGET_OPENCL_VERSION=300
+CXXFLAGS := -Wall -O2 -I/usr/include/eigen3 -MMD -MP
 
 # Library dependencies
 LIB := -lfftw3 -lm -lsfml-graphics -lsfml-window -lsfml-system -lOpenCL
