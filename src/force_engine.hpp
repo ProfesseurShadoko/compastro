@@ -27,6 +27,7 @@ class ForceEngine {
 public:
     static double softening;
     static double openingAngle;
+    static bool compute_potential;
     ParticleSet& particles; // avoid copy here! allows in place modification!
     
 
@@ -35,13 +36,20 @@ private:
     /**
      * Direct computation of force between particles in O(n^2)
      */
-    std::vector<Eigen::Vector3d> directForce() const;
+    std::vector<Eigen::Vector3d> directForce();
+
+    /**
+     * Direct computation of potential energy of the system in O(n^2)
+     */
+    std::vector<double> directPotential();
 
     /**
      * Tree code computation of force between particles in O(n log n) (n particles that act on a tree of depth log n).
      * If not use_quadrupole, the quadrupole moment will be left to 0 and thus the force computation will only contain the monopole term.
      */
-    std::vector<Eigen::Vector3d> treeForce(bool use_quadrupole) const;
+    std::vector<Eigen::Vector3d> treeForce(bool use_quadrupole);
+
+    std::vector<double> treePotential(bool use_quadrupole);
 
 
     void euler(double dt, Method method);
@@ -55,14 +63,19 @@ private:
     void symplectic(double dt, Method method);
 
 
-
 public:
     ForceEngine(ParticleSet& particles) : particles(particles) {};
 
+    
     /**
      * Compute the force between particles given chosen method
      */
-    std::vector<Eigen::Vector3d> computeForce(Method method) const;
+    std::vector<Eigen::Vector3d> computeForce(Method method);
+
+    /**
+     * Compute the potential energy of the system given chosen method
+     */
+    std::vector<double> computePotential(Method method);
 
     /**
      * Apply forces to particles, given chosen method. Does not update particle current time though!

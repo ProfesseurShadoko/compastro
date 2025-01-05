@@ -8,6 +8,7 @@
 
 double ForceEngine::openingAngle = 0.5;
 double ForceEngine::softening = 0.00113221;
+bool ForceEngine::compute_potential = true;
 
 
 /**
@@ -16,8 +17,8 @@ double ForceEngine::softening = 0.00113221;
  * --------------------------
  */
 
+std::vector<Eigen::Vector3d> ForceEngine::computeForce(Method method) {
 
-std::vector<Eigen::Vector3d> ForceEngine::computeForce(Method method) const {
     switch (method) {
         case Method::direct:
             return directForce();
@@ -27,6 +28,23 @@ std::vector<Eigen::Vector3d> ForceEngine::computeForce(Method method) const {
 
         case Method::tree_quad:
             return treeForce(true);
+
+        default:
+            throw std::runtime_error("Method not implemented.");
+    }
+}
+
+std::vector<double> ForceEngine::computePotential(Method method) {
+    
+    switch (method) {
+        case Method::direct:
+            return directPotential();
+        
+        case Method::tree_mono:
+            return treePotential(false);
+
+        case Method::tree_quad:
+            return treePotential(true);
 
         default:
             throw std::runtime_error("Method not implemented.");
@@ -84,6 +102,7 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
     ss << std::scientific << std::setprecision(1) << ((double)N_iter * real_n_save / N_skip);
 
     Message::print(" > Total number of particles saved: " + cstr(ss.str()).yellow());
+    Message::print(" > Compute potentials: " + std::to_string(compute_potential));
     Message::print(" > Opening Angle: " + std::to_string(openingAngle));
     Message::print(" > Softening: " + std::to_string(softening));
     Message::print(" > Crossing Time: " + std::to_string(crossingTime()));
@@ -91,6 +110,14 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
     if (cap_radius) {
         fixed_radius = particles.radius() * 10;
         Message::print(" > Fixed Radius: " + std::to_string(fixed_radius));
+    }
+
+
+    if (compute_potential) {
+        std::vector<double> potentials = computePotential(method);
+        for (int i=0; i<particles.size(); i++) {
+            particles.get(i).potentialEnergy = potentials[i];
+        }
     }
 
 
@@ -110,6 +137,14 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
         bar.update();
         evolve(dt, method, i_method);
         if (i % N_skip != 0) continue; // only one out of N_skip steps get saved
+
+        if (compute_potential) { // compute potential only for those we save
+            std::vector<double> potentials = computePotential(method);
+            for (int i=0; i<particles.size(); i++) {
+                particles.get(i).potentialEnergy = potentials[i];
+            }
+        }
+
         particles_over_time.add(particles.slice(0, N_save));
     }
     timer.stop();
@@ -140,7 +175,7 @@ double ForceEngine::crossingTime() const {
  * -------------------------------------
  */
 
-std::vector<Eigen::Vector3d> ForceEngine::directForce() const {
+std::vector<Eigen::Vector3d> ForceEngine::directForce() {
     std::vector<Eigen::Vector3d> forces(particles.size(), Eigen::Vector3d(0, 0, 0));
 
     for (int i = 0; i < particles.size(); i++) {
@@ -155,8 +190,23 @@ std::vector<Eigen::Vector3d> ForceEngine::directForce() const {
     return forces;
 }
 
+std::vector<double> ForceEngine::directPotential() {
+    std::vector<double> potentials(particles.size(), 0);
 
-std::vector<Eigen::Vector3d> ForceEngine::treeForce(bool use_quad) const {
+    for (int i = 0; i < particles.size(); i++) {
+        for (int j = 0; j < particles.size(); j++) {
+            if (i == j) {
+                continue;
+            }
+            double p = Particle::computePotential(particles.get(i), particles.get(j), softening);
+            potentials[i] += p;
+        }
+    }
+    return potentials;
+}
+
+
+std::vector<Eigen::Vector3d> ForceEngine::treeForce(bool use_quad) {
     double radius = (fixed_radius == -1) ? particles.radius() : fixed_radius; // if particles get ejected it gets difficut for the tree // might want to fix a max radius
 
     std::vector<Eigen::Vector3d> forces(particles.size(), Eigen::Vector3d(0, 0, 0));
@@ -171,6 +221,24 @@ std::vector<Eigen::Vector3d> ForceEngine::treeForce(bool use_quad) const {
     }
     
     return forces;
+}
+
+std::vector<double> ForceEngine::treePotential(bool use_quad) {
+    double radius = (fixed_radius == -1) ? particles.radius() : fixed_radius; // if particles get ejected it gets difficut for the tree // might want to fix a max radius
+
+    std::vector<double> potentials(particles.size(), 0);
+    Octree tree(radius); // doesn't care about outside of bunds particles
+    tree.insert(particles);
+    if (use_quad) {
+        tree.computeQuadrupoles();
+    }
+
+    for (int i = 0; i < particles.size(); i++) {
+        potentials[i] = tree.getPotential(particles.get(i), openingAngle);
+    }
+    
+    return potentials;
+
 }
 
 
