@@ -15,6 +15,7 @@ class Particle {
     double mass;
     double current_time = 0;
     double potentialEnergy = 0;
+    double envEnergy = 0; // total energy of the whole system with which the particle is interacting
     
 
 private:
@@ -183,7 +184,7 @@ public:
     void com();
 
     /**
-     * @brief returns sum of kinetic energy and potential energy of the system
+     * @brief returns sum of kinetic energy and potential energy of the system. assigns the returns value to all particles (in envEnergy field) (will be exported with save() method.).
      */
     double totalEnergy();
 

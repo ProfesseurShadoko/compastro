@@ -9,7 +9,7 @@
 double ForceEngine::openingAngle = 0.5;
 double ForceEngine::softening = 0.00113221;
 bool ForceEngine::compute_potential = true;
-bool ForceEngine::displayEnergyConservation = true;
+std::vector<double> ForceEngine::totalEnergies;
 
 
 /**
@@ -37,7 +37,7 @@ std::vector<Eigen::Vector3d> ForceEngine::computeForce(Method method) {
 
 std::vector<double> ForceEngine::computePotential(Method method) {
     if (!compute_potential) {
-        Message("Potential computation is disabled, bu called anyway!", "!");
+        Message("Potential computation is disabled, but called anyway!", "!");
     }
     //std::cout << "Computing potential" << std::endl;
     std::vector<double> potentials;
@@ -61,6 +61,14 @@ std::vector<double> ForceEngine::computePotential(Method method) {
 
     // let's assign the potentials to the particles
     for (int i=0; i<particles.size(); i++) {
+
+        if (method==Method::tree_mono || method==Method::tree_quad) {
+            // if particle outside of  the radius of the tree, we don't want to update its potential since we didn't apply force on it => must keep constant velocity & constant energy
+            double radius = (fixed_radius == -1) ? particles.radius() : fixed_radius;
+            if (particles.get(i).position.norm() > radius) continue;
+        }
+        
+        
         particles.get(i).potentialEnergy = potentials[i];
     }
     //std::cout << "Potentials[0]: " << potentials[0] << std::endl;
@@ -97,7 +105,10 @@ void ForceEngine::evolve(double dt, Method method, IntegrationMethod i_method) {
             throw std::runtime_error("Integration Method not implemented.");
     }
 
-    if (compute_potential) computePotential(method); // no that we moved our particles, we need to update their potentials
+    if (compute_potential) {
+        computePotential(method); // no that we moved our particles, we need to update their potentials
+        particles.totalEnergy(); // this assigns to each particle the total energy of the system in the envEnergy field
+    }; 
 }
 
 
@@ -135,7 +146,14 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
     }
 
 
-    if (compute_potential) computePotential(method); // also assigns the potentials
+    if (compute_potential) {
+        computePotential(method); // also assigns the potentials
+
+        std::stringstream ss2;
+        ss2 << std::scientific << std::setprecision(4) << particles.totalEnergy(); // also saves total energy <3
+        Message::print(" > Initial Total Energy: " + cstr(ss2.str()).green());
+    }
+    
     
     //std::cout << "Initial particle" << std::endl;
     //particles.get(0).display();
@@ -165,6 +183,14 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
     Message::print(" > Force Call Counter: " + std::to_string(forceCallCounter));
     Message::print(" > Force Call Counter per Particle per Iteration: " + std::to_string((double) forceCallCounter / particles.size() / N_iter));
     Message::print(" > Final radius: " + std::to_string(particles.radius()));
+
+    if (compute_potential) {
+         std::stringstream ss3;
+        ss3 << std::scientific << std::setprecision(4) << particles.totalEnergy();
+        Message::print(" > Final Total Energy: " + cstr(ss3.str()).green());
+    }
+   
+
     timer.display();
     Message("Evolution complete!", "#");
 

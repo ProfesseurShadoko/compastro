@@ -37,6 +37,7 @@ Particle::Particle(const Particle& p) {
     this->current_time = p.current_time;
     this->id = p.id;
     this->potentialEnergy = p.potentialEnergy;
+    this->envEnergy = p.envEnergy;
 }
 
 Particle::Particle(std::initializer_list<double> init) {
@@ -213,7 +214,15 @@ double ParticleSet::totalEnergy() {
         kinetic += 0.5 * p.mass * p.velocity.squaredNorm();
         potential += p.potentialEnergy * p.mass;
     }
-    return kinetic + potential * 0.5; // we have to divide by 2 because we have double counted the potential energy
+    double totEnergy = kinetic + potential * 0.5; // we have to divide by 2 because we have double counted the potential energy
+    
+    // let's assign totalEnergy to everyone!
+    for (int i = 0; i < size(); i++) {
+        get(i).envEnergy = totEnergy;
+        //std::cout << "Particle " << i << " has energy " << get(i).envEnergy << std::endl;
+    }
+
+    return totEnergy;
 }
 
 
@@ -247,12 +256,12 @@ void ParticleSet::save(std::string path, ParticleSet particles) {
     if (!file.is_open()) {
         throw std::runtime_error("Could not open file.");
     }
-    file << "index,mass,x,y,z,vx,vy,vz,eps,potential,t" << std::endl; // phi becomes now just a stupid name for time
+    file << "index,mass,x,y,z,vx,vy,vz,eps,potential,t,envEnergy" << std::endl; // phi becomes now just a stupid name for time
 
     file << std::fixed << std::setprecision(30); // need high precision to evaluate rk2, who has precision up to 1e-15
     for (int i = 0; i < particles.size(); i++) {
         Particle p = particles.get(i);
-        file << p.getId() << "," << p.mass << "," << p.position(0) << "," << p.position(1) << "," << p.position(2) << "," << p.velocity(0) << "," << p.velocity(1) << "," << p.velocity(2) << "," << ForceEngine::softening << "," << p.potentialEnergy << "," << p.current_time << std::endl;
+        file << p.getId() << "," << p.mass << "," << p.position(0) << "," << p.position(1) << "," << p.position(2) << "," << p.velocity(0) << "," << p.velocity(1) << "," << p.velocity(2) << "," << ForceEngine::softening << "," << p.potentialEnergy << "," << p.current_time << "," << p.envEnergy << std::endl;
     }
 }
 

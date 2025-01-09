@@ -28,7 +28,7 @@ public:
     static double softening;
     static double openingAngle;
     static bool compute_potential;
-    static bool displayEnergyConservation;
+    static std::vector<double> totalEnergies; // when 'evolve' is called this gets filled with the total energy of the system at each saved step
     ParticleSet& particles; // avoid copy here! allows in place modification!
     
 
