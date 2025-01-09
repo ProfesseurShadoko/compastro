@@ -240,7 +240,7 @@ if __name__ == "__main__":
         os.chdir('..')
     print("Current working directory:", os.getcwd())
     
-    N = 6000
+    N = 1000
     smbh_mass = 10 # units of total mass
     smbh_radius = 0.3
     

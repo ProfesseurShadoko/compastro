@@ -147,12 +147,13 @@ void simulateMilkyWay() {
     ParticleSet particles = ParticleSet::load("files/tests/galaxy/milkyway.txt");
     ForceEngine engine(particles);
 
-    double softening = 0.01; // 1% of R
-    double crossing_time = 1.0;
+    double softening = 0.1; // 1% of R
+    double crossing_time = 0.1;
     double dt = crossing_time / 50;
     int N_iter = 3000;
-    int N_save = 1000; // -1 means all of them
-    int N_skip = 10;
+    int N_save = -1; // -1 means all of them
+    int N_skip = 5;
+    double initial_radius = particles.radius();
 
     ForceEngine::softening = softening;
     ForceEngine::openingAngle = 0.5;
@@ -163,6 +164,9 @@ void simulateMilkyWay() {
     ParticleSet over_time = engine.evolve(dt, Method::tree_mono, IntegrationMethod::symplectic, N_iter, N_save,N_skip);
 
     ParticleSet::save("files/tests/galaxy/milkyway_over_time.csv", over_time);
+
+    Window window(over_time, initial_radius);
+    window.animate();
 }
 
 
@@ -188,7 +192,7 @@ void evolveData() {
     ParticleSet particles = ParticleSet::load("files/data.txt");
     ForceEngine engine(particles);
 
-    ForceEngine::softening = 0.01;
+    //ForceEngine::softening = 0.01;
     double dt = engine.crossingTime() / 50;
     int N_iter = 100;
     int N_save = 10000;
@@ -396,14 +400,12 @@ void testPotentials() {
     
 };
 
-
-
-int main() {
+void testEnergyConservation() {
     //evolveData();
-    Particle p1 = Particle(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), 100);
-    Particle p2 = Particle(Eigen::Vector3d(2, 0, 0), Eigen::Vector3d(0, -7, 0), 1);
-    Particle p3 = Particle(Eigen::Vector3d(0, 1, 0), Eigen::Vector3d(10, 0, 0), 1);
-    Particle p4 = Particle(Eigen::Vector3d(4, 3, 0), Eigen::Vector3d(3, -3, 0), 1);
+    Particle p1 = Particle(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), 1);
+    Particle p2 = Particle(Eigen::Vector3d(2, 0, 0), Eigen::Vector3d(0, -1, 0), 1);
+    Particle p3 = Particle(Eigen::Vector3d(0, 1, 0), Eigen::Vector3d(1, 0, 0), 1);
+    Particle p4 = Particle(Eigen::Vector3d(4, 3, 0), Eigen::Vector3d(1, -1, 0), 1);
     ParticleSet particles = {p1, p2, p3, p4};
     particles.com();
 
@@ -412,11 +414,129 @@ int main() {
     double energy = particles.totalEnergy();
     std::cout << "Total Energy: " << energy << std::endl;
 
-    ParticleSet particles_over_time = engine.evolve(0.001, Method::direct, IntegrationMethod::rk4, 10000, 4, 20, true);
+    ParticleSet particles_over_time = engine.evolve(0.005, Method::direct, IntegrationMethod::rk4, 10000, 4, 20, true);
     Window window(particles_over_time, 10);
     window.animate();
 
     std::cout << "Total Energy: " << particles.totalEnergy() << std::endl;
+    ParticleSet::save("files/output/direct_energy_conservation.csv", particles_over_time);
+}
+
+
+void computeForcesVariousOpeningAngles() {
+    ParticleSet particles = ParticleSet::load("files/data.txt"); // 50000 of them, a lot
+    //double R = 1;
+    int N = particles.size();
+    //double m = particles.get(0).mass;
+    //double M_tot = m * N; // we assume all have same mass, which is the case
+    //double G = 1;
+
+    // let's create our array of opening angles
+    double min_theta = 0.01;
+    double max_theta = 1;
+    int n_theta = 30;
+    double theta;
+    std::vector<double> thetas;
+ 
+    std::cout << "Min theta: " << min_theta << std::endl;
+    std::cout << "Max theta: " << max_theta << std::endl;
+    if (max_theta < min_theta) throw("Not enough epsilon range");
+    
+    for (int i=0; i<n_theta; i++) {
+        theta = min_theta + i*(max_theta - min_theta) / (n_theta-1);
+        thetas.push_back(theta);
+        //std::cout << "Current Epsilon: " << eps << std::endl;
+    }
+
+    // let's create the vectors to store the results
+    std::vector<double> relative_errors_mono;
+    std::vector<double> time_mono;
+    std::vector<double> iters_mono;
+
+    std::vector<double> relative_errors_quad;
+    std::vector<double> time_quad;
+    std::vector<double> iters_quad;
+
+    
+
+    // let's compute the forces for each one of them
+    ForceEngine engine = ForceEngine(particles);
+    Timer timer;
+    int N_rep = 1;
+
+    // let's compute reference with direct first
+    Message("Computing the reference forces with direct summation");
+    std::vector<Eigen::Vector3d> forces_direct;
+    timer.start();
+    for (int j=0; j<N_rep; j++) {
+        forces_direct = engine.computeForce(Method::direct);
+    }
+
+    double time_direct = timer.stop() / N_rep;
+    std::cout << "t_direct = " << time_direct << std::endl;
+    std::cout << "f_count_direct_per_part = " << Particle::popForceCallCounter() / N << std::endl;
+
+    ProgressBar bar = ProgressBar(n_theta * 2);
+    for (size_t i=0; i<thetas.size(); i++) {
+        bar.print("Computing forces for theta = " + std::to_string(thetas[i]));
+        ForceEngine::openingAngle = thetas[i];
+
+        // --- Monopole ---
+        std::vector<Eigen::Vector3d> forces_mono;
+        timer.start();
+        for (int j=0; j<N_rep; j++) forces_mono = engine.computeForce(Method::tree_mono);
+        time_mono.push_back(timer.stop() / N_rep);
+        iters_mono.push_back((double)Particle::popForceCallCounter() / (N_rep * N));
+        bar.update();
+
+        // --- Quadrupole ---
+        std::vector<Eigen::Vector3d> forces_quad;
+        timer.start();
+        for (int j=0; j<N_rep; j++) forces_quad = engine.computeForce(Method::tree_quad);
+        time_quad.push_back(timer.stop() / N_rep);
+        iters_quad.push_back((double)Particle::popForceCallCounter() / (N_rep * N));
+        bar.update();
+
+        // --- Compute the relative errors ---
+        double error_mono = 0;
+        double error_quad = 0;
+
+        for (int j=0; j<particles.size(); j++) {
+            error_mono += (forces_mono[j] - forces_direct[j]).norm() / forces_direct[j].norm();
+            error_quad += (forces_quad[j] - forces_direct[j]).norm() / forces_direct[j].norm();
+        }
+
+        relative_errors_mono.push_back(error_mono / N);
+        relative_errors_quad.push_back(error_quad / N);
+    }
+
+
+    // let's dispaly the results:
+    std::cout << "theta_errm_errz_timem_timeq_iterm_iterq = [";
+    for (int i=0; i<n_theta; i++) {
+        theta = thetas[i];
+        double error_mono = relative_errors_mono[i];
+        double error_quad = relative_errors_quad[i];
+        double time_m = time_mono[i];
+        double time_q = time_quad[i];
+        double iter_m = iters_mono[i];
+        double iter_q = iters_quad[i];
+        std::cout << "[" << theta << "," << error_mono << "," << error_quad << "," << time_m << "," << time_q << "," << iter_m << "," << iter_q << "],";
+        
+    }
+    std::cout << "]" << std::endl;
+    std::cout <<"Comment: force count is per particle." << std::endl;
+
+}
+
+
+
+
+int main() {
+    //simulateMilkyWay();
+    //evolveData();
+    //testEnergyConservation();
+    computeForcesVariousOpeningAngles();
 
     return 0;
 }
