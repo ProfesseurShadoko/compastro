@@ -9,3 +9,5 @@ build/
 
 # ignore trash directory
 trash/
+
+src_paul/
