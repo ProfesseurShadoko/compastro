@@ -29,17 +29,17 @@ void computeExactForcesOnData(ParticleSet& particles) {
     ForceEngine engine(particles);
     Timer timer("Direct Solver");
     timer.start();
-    std::vector<Eigen::Vector3d> forces = engine.computeForce(Method::direct);
+    std::vector<Eigen::Vector3d> forces = engine.computeForce(Method::direct_opt);
     timer.stop();
     timer.display();
 
     Timer timer2("Direct Solver (Potential)");
     timer2.start();
-    engine.computePotential(Method::direct);
+    engine.computePotential(Method::direct_opt);
     timer2.stop();
     timer2.display();
 
-    ParticleSet::saveForces("files/output/DIRECT_FORCES_eps=" + std::to_string(engine.softening) + "_data.csv", forces);
+    ParticleSet::saveForces("files/output/DIRECT_FORCES_data.csv", forces);
      ParticleSet::save("files/output/DIRECT_POTENTIAL_data.csv", particles);
     std::cout << "Force call count (direct): " << Particle::popForceCallCounter() << std::endl;
 
@@ -54,7 +54,7 @@ void treeMonopoleOnData(ParticleSet& particles) {
     timer.stop();
     timer.display();
 
-    Timer timer2("Direct Solver (Potential)");
+    Timer timer2("Tree Solver (Potential)");
     timer2.start();
     engine.computePotential(Method::tree_mono);
     timer2.stop();
@@ -77,7 +77,7 @@ void treeQuadOnData(ParticleSet& particles) {
     timer.stop();
     timer.display();
 
-    Timer timer2("Direct Solver (Potential)");
+    Timer timer2("Tree Solver (Potential)");
     timer2.start();
     engine.computePotential(Method::tree_quad);
     timer2.stop();
@@ -536,7 +536,12 @@ int main() {
     //simulateMilkyWay();
     //evolveData();
     //testEnergyConservation();
-    computeForcesVariousOpeningAngles();
+    //computeForcesVariousOpeningAngles();
+    ForceEngine::softening = 1.;
+    ParticleSet particles = ParticleSet::load("files/data.txt");
+    computeExactForcesOnData(particles);
+    treeMonopoleOnData(particles);
+    treeQuadOnData(particles);
 
     return 0;
 }
