@@ -189,20 +189,27 @@ void testGraphics() {
 }
 
 void evolveData() {
+    // how much time will this take?
+    /**
+     * Direct: 10s
+     * Tree Mono: 2s
+     * Tree Quad: 1s
+     * 
+     * We want to evolve for at about 1000 crossing times to reach relaxation time.
+     * This would be 100 000 iterations => 1e6s = 11 days
+     * We need to make this 100 times faster => let's do 10 crossing times
+     */
     ParticleSet particles = ParticleSet::load("files/data.txt");
     ForceEngine engine(particles);
 
-    //ForceEngine::softening = 0.01;
     double dt = engine.crossingTime() / 50;
-    int N_iter = 100;
-    int N_save = 10000;
-    int N_skip = 1;
-    double radius = 1;
+    int N_iter = 500;
+    int N_save = 1;
+    int N_skip = 10;
 
-    ParticleSet particles_over_time = engine.evolve(dt, Method::tree_quad, IntegrationMethod::rk4, N_iter, N_save, N_skip, true);
-    ParticleSet::save("files/output/data_over_time.csv", particles_over_time);
-    Window window(particles_over_time, radius);
-    window.animate();
+
+    ParticleSet particles_over_time = engine.evolve(dt, Method::direct_opt, IntegrationMethod::rk4, N_iter, N_save, N_skip, true);
+    ParticleSet::save("files/result.csv", particles_over_time);
 }
 
 void computeForcesVariousEpsilons() {
@@ -402,24 +409,47 @@ void testPotentials() {
 
 void testEnergyConservation() {
     //evolveData();
-    Particle p1 = Particle(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), 1);
-    Particle p2 = Particle(Eigen::Vector3d(2, 0, 0), Eigen::Vector3d(0, -1, 0), 1);
-    Particle p3 = Particle(Eigen::Vector3d(0, 1, 0), Eigen::Vector3d(1, 0, 0), 1);
-    Particle p4 = Particle(Eigen::Vector3d(4, 3, 0), Eigen::Vector3d(1, -1, 0), 1);
+    Particle p1 = Particle(Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), 10);
+    Particle p2 = Particle(Eigen::Vector3d(2.5, 0, 0), Eigen::Vector3d(0, -2, 0), 1);
+    Particle p3 = Particle(Eigen::Vector3d(0, 1, 0), Eigen::Vector3d(-3, 0, 0), 1);
+    Particle p4 = Particle(Eigen::Vector3d(4, 3, 0), Eigen::Vector3d(1, -1.5, 0), 1);
     ParticleSet particles = {p1, p2, p3, p4};
     particles.com();
 
+    Method method = Method::direct;
+    int N_iter = 10000;
+
     ForceEngine engine(particles);
-    engine.computePotential(Method::direct);
+    engine.computePotential(method);
     double energy = particles.totalEnergy();
     std::cout << "Total Energy: " << energy << std::endl;
 
-    ParticleSet particles_over_time = engine.evolve(0.005, Method::direct, IntegrationMethod::rk4, 10000, 4, 20, true);
+    ParticleSet particles_over_time = engine.evolve(0.005, method, IntegrationMethod::rk4, N_iter, 4, 20, true);
     Window window(particles_over_time, 10);
     window.animate();
 
     std::cout << "Total Energy: " << particles.totalEnergy() << std::endl;
-    ParticleSet::save("files/output/direct_energy_conservation.csv", particles_over_time);
+
+    
+
+    switch (method)
+    {
+    case Method::direct:
+        ParticleSet::save("files/output/direct_energy_conservation.csv", particles_over_time);
+        break;
+    
+    case Method::tree_mono:
+        ParticleSet::save("files/output/tree_mono_energy_conservation.csv", particles_over_time);
+        break;
+    
+    case Method::tree_quad:
+        ParticleSet::save("files/output/tree_quad_energy_conservation.csv", particles_over_time);
+        break;
+
+    default:
+        break;
+    }
+    
 }
 
 
@@ -530,18 +560,36 @@ void computeForcesVariousOpeningAngles() {
 }
 
 
+void testMemory() {
+    ParticleSet particles = ParticleSet::load("files/data.txt");
+    
+    int N_iter = 1000;
+    ProgressBar bar = ProgressBar(N_iter);
+
+    for (int i=0; i<N_iter; i++) {
+        bar.update();
+        Node node = Node(Eigen::Vector3d(0, 0, 0), 1);
+
+        for (int i =0; i<particles.size(); i++) {
+            node.insert(particles.get(i));
+        }
+        
+        bar.printMemoryUsage();
+    }
+}
+
 
 
 int main() {
     //simulateMilkyWay();
-    //evolveData();
+    evolveData();
     //testEnergyConservation();
     //computeForcesVariousOpeningAngles();
-    ForceEngine::softening = 1.;
-    ParticleSet particles = ParticleSet::load("files/data.txt");
-    computeExactForcesOnData(particles);
-    treeMonopoleOnData(particles);
-    treeQuadOnData(particles);
-
+    //ForceEngine::softening = 1.;
+    //ParticleSet particles = ParticleSet::load("files/data.txt");
+    //computeExactForcesOnData(particles);
+    //treeMonopoleOnData(particles);
+    //treeQuadOnData(particles);
+    //testMemory();
     return 0;
 }
