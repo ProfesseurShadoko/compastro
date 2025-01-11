@@ -67,11 +67,11 @@ std::vector<double> ForceEngine::computePotential(Method method) {
     }
 
     // let's assign the potentials to the particles
+    double radius = (fixed_radius == -1) ? particles.radius() : fixed_radius;
     for (int i=0; i<particles.size(); i++) {
 
         if (method==Method::tree_mono || method==Method::tree_quad) {
             // if particle outside of  the radius of the tree, we don't want to update its potential since we didn't apply force on it => must keep constant velocity & constant energy
-            double radius = (fixed_radius == -1) ? particles.radius() : fixed_radius;
             if (particles.get(i).position.norm() > radius) continue;
         }
         
@@ -152,7 +152,6 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
         Message::print(" > Fixed Radius: " + std::to_string(fixed_radius));
     }
 
-
     if (compute_potential) {
         computePotential(method); // also assigns the potentials
 
@@ -192,7 +191,7 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
     Message::print(" > Final radius: " + std::to_string(particles.radius()));
 
     if (compute_potential) {
-         std::stringstream ss3;
+        std::stringstream ss3;
         ss3 << std::scientific << std::setprecision(4) << particles.totalEnergy();
         Message::print(" > Final Total Energy: " + cstr(ss3.str()).green());
     }
