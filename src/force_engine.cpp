@@ -270,7 +270,7 @@ std::vector<double> ForceEngine::directPotentialOpt() {
         for (int j = i+1; j < particles.size(); j++) {
             double p = Particle::computePotential(particles.get(i), particles.get(j), softening);
             potentials[i] += p;
-            potentials[j] += p;
+            potentials[j] += p / particles.get(j).mass * particles.get(i).mass; // because computePotential returns the potential energy normalized by mass
         }
     }
     return potentials;
