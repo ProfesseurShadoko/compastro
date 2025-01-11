@@ -138,6 +138,7 @@ public:
      * Use this instead of simply std::cout because progressbar erases stuff.
      */
     void print(std::string msg);
+    void printMemoryUsage();
     static void sleep(int ms);
     static void mute();
     static void unmute();

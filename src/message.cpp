@@ -1,6 +1,7 @@
 #include "message.hpp" // everything is declared there
 #include <string> 
 #include <iostream>
+#include <sys/resource.h>
 
 /**
  * Colored String
@@ -212,8 +213,15 @@ void ProgressBar::display() {
     std::string next_print = "\r" + cstr("[%]").blue() + " Progress: " + bar + " (" + progress_percent_str + ")";
 
     if (next_print != previous_print) {
-        std::cout << next_print << std::flush;
         previous_print = next_print;
+
+        // let's add some information about the memory usage
+        struct rusage usage;
+        getrusage(RUSAGE_SELF, &usage);
+        std::string memory_usage = " > " + std::to_string(usage.ru_maxrss / 1000) + " MB";
+
+        std::cout << next_print + memory_usage << std::flush;
+
     }
 
 
@@ -264,4 +272,13 @@ void ProgressBar::print(std::string msg) {
     std::cout << "\r" << msg << std::endl;
     std::cout << previous_print << std::flush;
     
+}
+
+
+
+void ProgressBar::printMemoryUsage() {
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+    std::string to_print = "Memory Usage: " + std::to_string(usage.ru_maxrss) + " KB";
+    print(to_print);
 }
