@@ -101,6 +101,7 @@ int Node::childIndex(Particle& particle) {
 // force computation (:D)
 //                    \/
 #include <iostream>
+
 Eigen::Vector3d Node::getForce(Particle& particle, double theta, bool useQuadrupoles) {
     
     /**
@@ -133,15 +134,19 @@ Eigen::Vector3d Node::getForce(Particle& particle, double theta, bool useQuadrup
         Eigen::Vector3d r_tilde = particle.position - centerOfMass; // r_tilde = r-com
         Particle pseudoParticle(centerOfMass, Eigen::Vector3d::Zero(), totalMass); // pseudo particle at center of mass
         Eigen::Vector3d monopole_force = Particle::computeForce(particle, pseudoParticle, ForceEngine::softening); // F = -GM/r^2
-
+        
         if (!useQuadrupoles) { // maybe we don't want to use quadrupoles yet
             return monopole_force;
         }   
 
         // compute the quadrupole force
-        Eigen::Vector3d q_term = 2 * quadrupole * r_tilde / pow(r_tilde.norm(), 5); // (2Qr / r^5)
+        double r_tilde_norm = r_tilde.norm();
+        double r_tilde5 = r_tilde_norm * r_tilde_norm * r_tilde_norm * r_tilde_norm * r_tilde_norm;
+        double r_tilde7 = r_tilde5 * r_tilde_norm * r_tilde_norm;
+
+        Eigen::Vector3d q_term = 2 * quadrupole * r_tilde / r_tilde5; // (2Qr / r^5)
         double rQr = r_tilde.transpose() * quadrupole * r_tilde;
-        Eigen::Vector3d r_term = 5 * rQr * r_tilde / pow(r_tilde.norm(), 7); // (5rQr * r / r^7)
+        Eigen::Vector3d r_term = 5 * rQr * r_tilde / r_tilde7; // (5rQr * r / r^7)
         Eigen::Vector3d quadrupole_force = 0.5 * particle.mass * (q_term - r_term); // -GM(2Qr / r^5 - 5rQr * r / r^7) // - !!! <3 :( => (u/v)' = u'v - uv' / v^2 !!!!! et pas +
         return monopole_force + quadrupole_force;
     }
@@ -177,6 +182,7 @@ double Node::getPotential(Particle& particle, double theta, bool useQuadrupoles)
      */
     double distance = (centerOfMass - particle.position).norm();
     if (halfWidth / distance < theta) { 
+        
         /**
          * small parenthesis on theta: what happens when we compare a particle to itself?
          * well centerOfMass is computed with the particle => particle is in the cube => distance to center should be less than halfwidth (except if center of mass is unluckily far away from cube center)
@@ -187,14 +193,14 @@ double Node::getPotential(Particle& particle, double theta, bool useQuadrupoles)
         Eigen::Vector3d r_tilde = particle.position - centerOfMass; // r_tilde = r-com
         Particle pseudoParticle(centerOfMass, Eigen::Vector3d::Zero(), totalMass); // pseudo particle at center of mass
         double monopole_force = Particle::computePotential(particle, pseudoParticle, ForceEngine::softening); // F = -GM/r^2
-
         if (!useQuadrupoles) { // maybe we don't want to use quadrupoles yet
             return monopole_force;
         }   
-
-        // compute the quadrupole force
+        
         double rQr = r_tilde.transpose() * quadrupole * r_tilde;
-        double quadrupole_force = - 0.5 * rQr / pow(r_tilde.norm(), 5); // - 1/2 (rQr / r^5)
+        double r_tilde_norm = r_tilde.norm();
+        double r_tilde5 = r_tilde_norm * r_tilde_norm * r_tilde_norm * r_tilde_norm * r_tilde_norm;
+        double quadrupole_force = - 0.5 * rQr / r_tilde5; // - 1/2 (rQr / r^5)
         return monopole_force + quadrupole_force; // we choose to always return the normalized potential (like electrmagntism with charge). for actual potential, multiply by particle.mass
     }
 
