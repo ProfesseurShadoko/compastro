@@ -38,6 +38,11 @@ class Node {
      */
     ~Node();
 
+    /**
+     * Display
+     */
+    void display();
+
 
     /**
      * Here is the procedure:
@@ -132,6 +137,8 @@ public:
     Octree(double halfWidth);
     ~Octree();
 
+    void display(); 
+
     /**
      * Calls *clear()*
      * Inserts a set of particles into the tree.
@@ -164,7 +171,6 @@ public:
      * Saves recursively the nodes into a csv file
      */
     static void save(std::string path, Octree& tree);
-
 private:
     /**
      * Resets the Tree to its initial state

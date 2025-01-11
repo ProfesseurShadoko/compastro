@@ -3,6 +3,7 @@
 
 #include "tree.hpp"
 #include "force_engine.hpp" // for softening
+#include "message.hpp"
 
 
 
@@ -40,6 +41,35 @@ Node::~Node() { // the only important thing is to call delete on everyone => rec
     }
 }
 
+void Node::display() {
+    // let's display the current informations:
+    if (isLeaf() && particle == nullptr) {
+        return;
+    }
+
+    if (!isLeaf()) {
+        std::cout << "Node: (";
+    } else {
+        std::cout << "Node (Leaf): (";
+    }
+    std::cout << position.x() << ", " << position.y() << ", " << position.z() << ") -> " << halfWidth << std::endl;
+    std::cout << "\t- Center of Mass: (" << centerOfMass.x() << ", " << centerOfMass.y() << ", " << centerOfMass.z() << ") -> " << totalMass << std::endl;
+    if (particle != nullptr) {
+        std::cout << "\t- Particle: " << particle->getId() << std::endl;
+    } else {
+        std::cout << "\t- Particle: None" << std::endl;
+    }
+    
+
+    // let's display the children
+    for (int i = 0; i < 8; i++) {
+        if (children[i] != nullptr) {
+            children[i]->display();
+        }
+    }
+}
+
+
 void Node::insert(Particle& particle) {
     // check whether the particle is in the node
     if (particle.position.x() <= position.x() - halfWidth || particle.position.x() > position.x() + halfWidth ||
@@ -64,6 +94,7 @@ void Node::insert(Particle& particle) {
             // insert the particle again
             children[childIndex(*oldParticle)]->insert(*oldParticle);
             children[childIndex(particle)]->insert(particle);
+            delete oldParticle; // ouiiiiii
         }
     } else {
         // if the node is not a leaf
@@ -102,27 +133,35 @@ int Node::childIndex(Particle& particle) {
 //                    \/
 #include <iostream>
 
-Eigen::Vector3d Node::getForce(Particle& particle, double theta, bool useQuadrupoles) {
+Eigen::Vector3d Node::getForce(Particle& p, double theta, bool useQuadrupoles) {
     
     /**
      * ############
      * ### LEAF ###
      * ############ => simply compute the usual force
      */
+
     if (isLeaf()) {
         
-        if (this->particle == nullptr || *(this->particle) == particle) { // id comparison
+        if (particle == nullptr || *particle == p) { // id comparison
             return Eigen::Vector3d(0, 0, 0); // no force if no particle / a particle doesn't apply a force on itself
         }
-        return Particle::computeForce(particle, *this->particle, ForceEngine::softening); // this is for now first order, we will add quadrupole later
+        return Particle::computeForce(p, *particle, ForceEngine::softening); // this is for now first order, we will add quadrupole later
     }
 
+    
     /**
      * ##################
      * ### NOT A LEAF ###
      * ################## => check opening angle condition
      */
-    double distance = (centerOfMass - particle.position).norm();
+    double distance = (centerOfMass - p.position).norm(); // how can this be inf?
+    
+    if (distance == 0) {
+        Message("Issue with Particle<" + std::to_string(p.getId()) + ">", "!");
+        throw std::runtime_error("Distance is 0. Should not happen. Division by 0 here. The issue might come form two particles at the exact same position!");
+    }
+
     if (halfWidth / distance < theta) { 
         /**
          * small parenthesis on theta: what happens when we compare a particle to itself?
@@ -131,36 +170,37 @@ Eigen::Vector3d Node::getForce(Particle& particle, double theta, bool useQuadrup
          */
 
         // ### OPENING ANGLE CONDITION SATISFIED ### // => return approximationwith center of mass (and potentially quadrupole)
-        Eigen::Vector3d r_tilde = particle.position - centerOfMass; // r_tilde = r-com
+        Eigen::Vector3d r_tilde = p.position - centerOfMass; // r_tilde = r-com
         Particle pseudoParticle(centerOfMass, Eigen::Vector3d::Zero(), totalMass); // pseudo particle at center of mass
-        Eigen::Vector3d monopole_force = Particle::computeForce(particle, pseudoParticle, ForceEngine::softening); // F = -GM/r^2
-        
+        Eigen::Vector3d monopole_force = Particle::computeForce(p, pseudoParticle, ForceEngine::softening); // F = -GM/r^2
+
         if (!useQuadrupoles) { // maybe we don't want to use quadrupoles yet
             return monopole_force;
         }   
 
         // compute the quadrupole force
-        double r_tilde_norm = r_tilde.norm();
+        //double r_tilde_norm = r_tilde.norm() + ForceEngine::softening; // to avoid division by 0 // not the correct formula, but might work correctly anyway
+        double r_tilde_norm = sqrt(r_tilde.squaredNorm() + ForceEngine::softening * ForceEngine::softening); // to avoid division by 0 // not the correct formula, but might work correctly anyway
         double r_tilde5 = r_tilde_norm * r_tilde_norm * r_tilde_norm * r_tilde_norm * r_tilde_norm;
         double r_tilde7 = r_tilde5 * r_tilde_norm * r_tilde_norm;
 
         Eigen::Vector3d q_term = 2 * quadrupole * r_tilde / r_tilde5; // (2Qr / r^5)
         double rQr = r_tilde.transpose() * quadrupole * r_tilde;
         Eigen::Vector3d r_term = 5 * rQr * r_tilde / r_tilde7; // (5rQr * r / r^7)
-        Eigen::Vector3d quadrupole_force = 0.5 * particle.mass * (q_term - r_term); // -GM(2Qr / r^5 - 5rQr * r / r^7) // - !!! <3 :( => (u/v)' = u'v - uv' / v^2 !!!!! et pas +
+        Eigen::Vector3d quadrupole_force = 0.5 * p.mass * (q_term - r_term); // -GM(2Qr / r^5 - 5rQr * r / r^7) // - !!! <3 :( => (u/v)' = u'v - uv' / v^2 !!!!! et pas +
         return monopole_force + quadrupole_force;
     }
 
     // ### OPENING ANGLE CONDITION NOT SATISFIED ### // => return sum of forces of children
     Eigen::Vector3d force(0, 0, 0);
     for (int i = 0; i < 8; i++) {
-        force += children[i]->getForce(particle, theta, useQuadrupoles);
+        force += children[i]->getForce(p, theta, useQuadrupoles);
     }
     return force;
 }
 
 
-double Node::getPotential(Particle& particle, double theta, bool useQuadrupoles) {
+double Node::getPotential(Particle& p, double theta, bool useQuadrupoles) {
     
     /**
      * ############
@@ -169,10 +209,10 @@ double Node::getPotential(Particle& particle, double theta, bool useQuadrupoles)
      */
     if (isLeaf()) {
         
-        if (this->particle == nullptr || *(this->particle) == particle) { // id comparison
+        if (particle == nullptr || *particle == p) { // id comparison
             return 0; // no potential if no particle / a particle doesn't apply a potential on itself
         }
-        return Particle::computePotential(particle, *this->particle, ForceEngine::softening); // this is for now first order, we will add quadrupole later
+        return Particle::computePotential(p, *particle, ForceEngine::softening); // this is for now first order, we will add quadrupole later
     }
 
     /**
@@ -180,7 +220,7 @@ double Node::getPotential(Particle& particle, double theta, bool useQuadrupoles)
      * ### NOT A LEAF ###
      * ################## => check opening angle condition
      */
-    double distance = (centerOfMass - particle.position).norm();
+    double distance = (centerOfMass - p.position).norm();
     if (halfWidth / distance < theta) { 
         
         /**
@@ -190,15 +230,16 @@ double Node::getPotential(Particle& particle, double theta, bool useQuadrupoles)
          */
 
         // ### OPENING ANGLE CONDITION SATISFIED ### // => return approximationwith center of mass (and potentially quadrupole)
-        Eigen::Vector3d r_tilde = particle.position - centerOfMass; // r_tilde = r-com
+        Eigen::Vector3d r_tilde = p.position - centerOfMass; // r_tilde = r-com
         Particle pseudoParticle(centerOfMass, Eigen::Vector3d::Zero(), totalMass); // pseudo particle at center of mass
-        double monopole_force = Particle::computePotential(particle, pseudoParticle, ForceEngine::softening); // F = -GM/r^2
+        double monopole_force = Particle::computePotential(p, pseudoParticle, ForceEngine::softening); // F = -GM/r^2
         if (!useQuadrupoles) { // maybe we don't want to use quadrupoles yet
             return monopole_force;
         }   
         
         double rQr = r_tilde.transpose() * quadrupole * r_tilde;
-        double r_tilde_norm = r_tilde.norm();
+        //double r_tilde_norm = r_tilde.norm() + ForceEngine::softening; // to avoid division by 0 // not the correct formula, but might work correctly anyway
+        double r_tilde_norm = sqrt(r_tilde.squaredNorm() + ForceEngine::softening * ForceEngine::softening); // to avoid division by 0 // not the correct formula, but might work correctly anyway
         double r_tilde5 = r_tilde_norm * r_tilde_norm * r_tilde_norm * r_tilde_norm * r_tilde_norm;
         double quadrupole_force = - 0.5 * rQr / r_tilde5; // - 1/2 (rQr / r^5)
         return monopole_force + quadrupole_force; // we choose to always return the normalized potential (like electrmagntism with charge). for actual potential, multiply by particle.mass
@@ -207,7 +248,7 @@ double Node::getPotential(Particle& particle, double theta, bool useQuadrupoles)
     // ### OPENING ANGLE CONDITION NOT SATISFIED ### // => return sum of forces of children
     double potential = 0;
     for (int i = 0; i < 8; i++) {
-        potential += children[i]->getPotential(particle, theta, useQuadrupoles);
+        potential += children[i]->getPotential(p, theta, useQuadrupoles);
     }
     return potential;
 }
@@ -233,6 +274,15 @@ Octree::Octree(double halfWidth) {
 Octree::~Octree() {
     delete root;
 }   
+
+void Octree::display() {
+    std::cout << std::endl;
+    std::cout << "--------------" << std::endl;
+    std::cout << "!-- Octree --!" << std::endl;
+    std::cout << "--------------" << std::endl;
+    root->display();
+}
+
 
 void Octree::insert(ParticleSet particles) {
     this->clear(); // useless for the first iteration, necessary after though
