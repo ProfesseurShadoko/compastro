@@ -29,6 +29,9 @@ std::vector<Eigen::Vector3d> ForceEngine::computeForce(Method method) {
 
         case Method::tree_quad:
             return treeForce(true);
+        
+        case Method::direct_opt:
+            return directForceOpt();
 
         default:
             throw std::runtime_error("Method not implemented.");
@@ -45,6 +48,10 @@ std::vector<double> ForceEngine::computePotential(Method method) {
     switch (method) {
         case Method::direct:
             potentials = directPotential();
+            break;
+        
+        case Method::direct_opt:
+            potentials = directPotentialOpt();
             break;
         
         case Method::tree_mono:
@@ -239,6 +246,32 @@ std::vector<double> ForceEngine::directPotential() {
             }
             double p = Particle::computePotential(particles.get(i), particles.get(j), softening);
             potentials[i] += p;
+        }
+    }
+    return potentials;
+}
+
+std::vector<Eigen::Vector3d> ForceEngine::directForceOpt() {
+    std::vector<Eigen::Vector3d> forces(particles.size(), Eigen::Vector3d(0, 0, 0));
+
+    for (int i = 0; i < particles.size(); i++) {
+        for (int j = i+1; j < particles.size(); j++) {
+            Eigen::Vector3d f = Particle::computeForce(particles.get(i), particles.get(j), softening);
+            forces[i] += f;
+            forces[j] -= f;
+        }
+    }
+    return forces;
+}
+
+std::vector<double> ForceEngine::directPotentialOpt() {
+    std::vector<double> potentials(particles.size(), 0);
+
+    for (int i = 0; i < particles.size(); i++) {
+        for (int j = i+1; j < particles.size(); j++) {
+            double p = Particle::computePotential(particles.get(i), particles.get(j), softening);
+            potentials[i] += p;
+            potentials[j] += p;
         }
     }
     return potentials;

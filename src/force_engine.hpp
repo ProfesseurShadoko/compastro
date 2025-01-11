@@ -7,6 +7,7 @@
 
 enum class Method {
     direct,
+    direct_opt,
     tree_mono,
     tree_quad,
     pm
@@ -43,6 +44,16 @@ private:
      * Direct computation of potential energy of the system in O(n^2)
      */
     std::vector<double> directPotential();
+
+    /**
+     * Direct computation of force between particles in O(n(n+1)/2) with optimized version
+     */
+    std::vector<Eigen::Vector3d> directForceOpt();
+
+    /**
+     * Direct computation of potential energy of the system in O(n(n+1)/2) with optimized version
+     */
+    std::vector<double> directPotentialOpt();
 
     /**
      * Tree code computation of force between particles in O(n log n) (n particles that act on a tree of depth log n).
