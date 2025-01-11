@@ -123,6 +123,9 @@ ParticleSet::ParticleSet(const ParticleSet& ps) {
 }
 
 Particle& ParticleSet::get(int i) {
+    if (i >= size()) {
+        throw std::runtime_error("Index out of bounds.");
+    }
     return particles[i];
 }
 
