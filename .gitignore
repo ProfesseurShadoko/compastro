@@ -6,6 +6,7 @@ build/
 *.gif
 *.pdf
 *.txt
+*.png
 
 # ignore trash directory
 trash/
