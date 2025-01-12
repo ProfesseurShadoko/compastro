@@ -127,8 +127,8 @@ ParticleSet ForceEngine::evolve(double dt, Method method, IntegrationMethod i_me
      * -----------------------------
      */
     Message("Evolving particles:");
-    Message::print(" > Method: " + std::to_string((int) method));
-    Message::print(" > Integration Method: " + std::to_string((int) i_method));
+    Message::print(" > Method: " + methodToString(method));
+    Message::print(" > Integration Method: " + methodToString(i_method));
     Message::print(" > Particle Set Size: " + std::to_string(particles.size()));
     Message::print(" > Number of iterations: " + std::to_string(N_iter));
     Message::print(" > Number of particles to save: " + std::to_string(N_save));
@@ -440,3 +440,51 @@ void ForceEngine::rk4(double dt, Method method) {
     }
 }
 
+
+
+/**
+ * -----------------
+ * ! --- Utils --- !
+ * -----------------
+ */
+
+std::string methodToString(Method method) {
+    switch (method) {
+        case Method::direct:
+            return "direct";
+        
+        case Method::tree_mono:
+            return "tree-monopole";
+
+        case Method::tree_quad:
+            return "tree-quadrupole";
+        
+        case Method::direct_opt:
+            return "direct-optimized";
+
+        default:
+            throw std::runtime_error("Method not implemented.");
+    }
+}
+
+std::string methodToString(IntegrationMethod method) {
+    switch (method) {
+        case IntegrationMethod::euler:
+            return "euler";
+        
+        case IntegrationMethod::leapfrog:
+            return "leapfrog";
+        
+        case IntegrationMethod::rk2:
+            return "rk2";
+
+        case IntegrationMethod::rk4:
+            return "rk4";
+
+        case IntegrationMethod::symplectic:
+            return "symplectic";
+
+        default:
+            throw std::runtime_error("Method not implemented.");
+    }
+}

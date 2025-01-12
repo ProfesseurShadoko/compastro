@@ -4,6 +4,7 @@
 #include <Eigen/Dense>
 #include "particle.hpp"
 #include <string>
+#include <string>
 
 enum class Method {
     direct,
@@ -13,6 +14,7 @@ enum class Method {
     pm
 };
 
+
 enum class IntegrationMethod {
     euler,
     leapfrog,
@@ -21,6 +23,9 @@ enum class IntegrationMethod {
     symplectic, // semi implicit euler => conservs energy
     verlet,
 };
+
+std::string methodToString(Method method);
+std::string methodToString(IntegrationMethod method);
 
 
 
