@@ -578,11 +578,26 @@ void testMemory() {
     }
 }
 
+void evolveDataTestRelax(Method method) {
+    ParticleSet particles = ParticleSet::load("files/data.txt");
+    ForceEngine engine(particles);
+
+    double dt = engine.crossingTime() / 50;
+    int N_iter = 500;
+    int N_save = 1;
+    int N_skip = 10;
+
+    ParticleSet particles_over_time = engine.evolve(dt, method, IntegrationMethod::rk4, N_iter, N_save, N_skip, true);
+
+    std::string params = "Niter=_" + std::to_string(N_iter) + "_Nsave=" + std::to_string(N_save) + "_Nskip=" + std::to_string(N_skip) + "_eps=" + std::to_string(ForceEngine::softening) + "_dt=" + std::to_string(dt) + "_oa=" + std::to_string(ForceEngine::openingAngle) +  "_" + methodToString(method) + "-" + methodToString(IntegrationMethod::rk4);
+    ParticleSet::save("files/RELAX_" + params +".csv", particles_over_time);
+}
+
 
 
 int main() {
     //simulateMilkyWay();
-    evolveData();
+    evolveDataTestRelax(Method::direct_opt);
     //testEnergyConservation();
     //computeForcesVariousOpeningAngles();
     //ForceEngine::softening = 1.;
