@@ -147,6 +147,18 @@ ParticleSet ParticleSet::slice(int start, int end) {
     return ps;
 }
 
+ParticleSet ParticleSet::slice(int end) {
+    return slice(0, end);
+}
+
+ParticleSet ParticleSet::slice_m(int end) {
+    ParticleSet out = slice(end);
+    for (int i=0; i<out.size(); i++) {
+        out.get(i).mass *= size() / out.size();
+    }
+    return out;
+}
+
 
 
 void ParticleSet::add(Particle p) {

@@ -164,9 +164,12 @@ public:
     /**
      * Take first N elements.
      */
-    ParticleSet slice(int end) {
-        return slice(0, end);
-    }
+    ParticleSet slice(int end);
+
+    /**
+     * Take first N elements but keep total mass of the system constant (by scaling all masses up). Don't worry, the copy operatros do deep copy.
+     */
+    ParticleSet slice_m(int end);
 
     /**
      * @brief Get the number of particles in the set.
