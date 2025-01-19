@@ -232,17 +232,17 @@ double Node::getPotential(Particle& p, double theta, bool useQuadrupoles) {
         // ### OPENING ANGLE CONDITION SATISFIED ### // => return approximationwith center of mass (and potentially quadrupole)
         Eigen::Vector3d r_tilde = p.position - centerOfMass; // r_tilde = r-com
         Particle pseudoParticle(centerOfMass, Eigen::Vector3d::Zero(), totalMass); // pseudo particle at center of mass
-        double monopole_force = Particle::computePotential(p, pseudoParticle, ForceEngine::softening); // F = -GM/r^2
+        double monopole_potential = Particle::computePotential(p, pseudoParticle, ForceEngine::softening); // F = -GM/r^2
         if (!useQuadrupoles) { // maybe we don't want to use quadrupoles yet
-            return monopole_force;
+            return monopole_potential;
         }   
         
         double rQr = r_tilde.transpose() * quadrupole * r_tilde;
         //double r_tilde_norm = r_tilde.norm() + ForceEngine::softening; // to avoid division by 0 // not the correct formula, but might work correctly anyway
         double r_tilde_norm = sqrt(r_tilde.squaredNorm() + ForceEngine::softening * ForceEngine::softening); // to avoid division by 0 // not the correct formula, but might work correctly anyway
         double r_tilde5 = r_tilde_norm * r_tilde_norm * r_tilde_norm * r_tilde_norm * r_tilde_norm;
-        double quadrupole_force = - 0.5 * rQr / r_tilde5; // - 1/2 (rQr / r^5)
-        return monopole_force + quadrupole_force; // we choose to always return the normalized potential (like electrmagntism with charge). for actual potential, multiply by particle.mass
+        double quadrupole_potential = - 0.5 * rQr / r_tilde5; // - 1/2 (rQr / r^5)
+        return monopole_potential + quadrupole_potential; // we choose to always return the normalized potential (like electrmagntism with charge). for actual potential, multiply by particle.mass
     }
 
     // ### OPENING ANGLE CONDITION NOT SATISFIED ### // => return sum of forces of children

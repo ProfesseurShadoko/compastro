@@ -23,6 +23,12 @@ ParticleSet& loadData() {
     return particles;
 }
 
+std::string getFileName(std::string prefix, int N_part, int N_iter, int N_save, int N_skip, double dt, Method method, IntegrationMethod i_method) {
+    
+    std::string params = "_Npart=" + std::to_string(N_part) + "_Niter=" + std::to_string(N_iter) + "_Nsave=" + std::to_string(N_save) + "_Nskip=" + std::to_string(N_skip) + "_eps=" + std::to_string(ForceEngine::softening) + "_dt=" + std::to_string(dt) + "_oa=" + std::to_string(ForceEngine::openingAngle) +  "_" + methodToString(method) + "-" + methodToString(i_method);
+    return prefix + params + ".csv";
+}
+
 
 void computeExactForcesOnData(ParticleSet& particles) {
    
@@ -585,19 +591,164 @@ void evolveDataTestRelax(Method method) {
     double dt = engine.crossingTime() / 50;
     int N_iter = 500;
     int N_save = 1;
-    int N_skip = 10;
+    int N_skip = 1;
 
     ParticleSet particles_over_time = engine.evolve(dt, method, IntegrationMethod::rk4, N_iter, N_save, N_skip, true);
 
-    std::string params = "Niter=_" + std::to_string(N_iter) + "_Nsave=" + std::to_string(N_save) + "_Nskip=" + std::to_string(N_skip) + "_eps=" + std::to_string(ForceEngine::softening) + "_dt=" + std::to_string(dt) + "_oa=" + std::to_string(ForceEngine::openingAngle) +  "_" + methodToString(method) + "-" + methodToString(IntegrationMethod::rk4);
+    std::string params = "_Npart=" + std::to_string(particles.size()) + "_Niter=" + std::to_string(N_iter) + "_Nsave=" + std::to_string(N_save) + "_Nskip=" + std::to_string(N_skip) + "_eps=" + std::to_string(ForceEngine::softening) + "_dt=" + std::to_string(dt) + "_oa=" + std::to_string(ForceEngine::openingAngle) +  "_" + methodToString(method) + "-" + methodToString(IntegrationMethod::rk4);
     ParticleSet::save("files/RELAX_" + params +".csv", particles_over_time);
+}
+
+
+void testSliceMass() {
+    ParticleSet particles = ParticleSet::load("files/data.txt");
+    particles = particles.slice_m(1000); // if simply use slice here => velocities too high => simulation explodes
+    ForceEngine engine(particles);
+    double dt = engine.crossingTime() / 50;
+    int N_iter = 1000;
+    int N_save = -1;
+    int N_skip = 1;
+    ParticleSet particles_over_time = engine.evolve(dt, Method::direct_opt, IntegrationMethod::rk4, N_iter, N_save, N_skip, true);
+
+    Window window(particles_over_time, 10);
+    window.animate();
+
+}
+
+
+void testMethodsPrecision() {
+    ParticleSet particles = ParticleSet::load("files/data.txt");
+    ForceEngine engine(particles);
+    ForceEngine::softening = 0;
+    ForceEngine::openingAngle = 0.5;
+
+    std::vector<Eigen::Vector3d> forces_direct = engine.computeForce(Method::direct_opt);
+    std::vector<Eigen::Vector3d> forces_tree_mono = engine.computeForce(Method::tree_mono);
+    std::vector<Eigen::Vector3d> forces_tree_quad = engine.computeForce(Method::tree_quad);
+
+    double error_mono = 0;
+    double error_quad = 0;
+
+    for (int i=0; i<particles.size(); i++) {
+        error_mono += (forces_tree_mono[i] - forces_direct[i]).norm() / forces_direct[i].norm();
+        error_quad += (forces_tree_quad[i] - forces_direct[i]).norm() / forces_direct[i].norm();
+    }
+
+    std::cout << "Error Mono: " << error_mono / particles.size() * 100 << "%" << std::endl;
+    std::cout << "Error Quad: " << error_quad / particles.size() * 100 << "%" << std::endl;
+
+    std::vector<double> potentials_direct = engine.computePotential(Method::direct_opt);
+    std::vector<double> potentials_tree_mono = engine.computePotential(Method::tree_mono);
+    std::vector<double> potentials_tree_quad = engine.computePotential(Method::tree_quad);
+
+    double error_mono_pot = 0;
+    double error_quad_pot = 0;
+
+    for (int i=0; i<particles.size(); i++) {
+        error_mono_pot += abs(potentials_tree_mono[i] - potentials_direct[i]) / abs(potentials_direct[i]);
+        error_quad_pot += abs(potentials_tree_quad[i] - potentials_direct[i]) / abs(potentials_direct[i]);
+    }
+
+    std::cout << "Error Mono Pot: " << error_mono_pot / particles.size() * 100 << "%" << std::endl;
+    std::cout << "Error Quad Pot: " << error_quad_pot / particles.size() * 100 << "%" << std::endl;
+
+
+    // 
+}
+
+
+void relaxTimeDifferentEpsilons() {
+    std::vector<double> epsilons = {10};
+    ParticleSet particles = ParticleSet::load("files/data.txt");
+
+    int N_particles = 20000;
+    particles = particles.slice_m(N_particles);
+    ForceEngine engine(particles);
+    double dt = engine.crossingTime() / 50; // set by total mass anyway
+    
+    Method method = Method::direct_opt;
+    int N_iter = 500;
+    int N_save = 1;
+    int N_skip = 1;
+
+    // let's estimate how much time this is gonna take
+    Timer timer("OneForce");
+    timer.start();
+    engine.computeForce(Method::direct_opt);
+    timer.stop();
+    double time_one_force = timer.getTimeNs();
+
+    // how many times do we call this function?
+    int N_force_calls = N_iter * 5 * epsilons.size(); // 5 because 4 from rk4 and 1 for potential
+    double time_total = time_one_force * N_force_calls / 1e9 / 3600; // in seconds
+    std::cout << "Total estimated time: " << time_total << "h" << std::endl;
+
+    // let's evolve our particles for each epsilon and save them!
+    for (int i=0; i<(int)epsilons.size(); i++) {
+        ForceEngine::softening = epsilons[i];
+        Message("Evolving for epsilon = " + std::to_string(epsilons[i]));
+        ParticleSet particles_epsilon = particles; // deep copy
+        ForceEngine engine_epsilon(particles_epsilon);
+        ParticleSet particles_over_time = engine_epsilon.evolve(dt, method, IntegrationMethod::rk4, N_iter, N_save, N_skip, true);
+        std::string filename = getFileName("files/relax/softening/espilon", N_particles, N_iter, N_save, N_skip, dt, method, IntegrationMethod::rk4);
+        ParticleSet::save(filename, particles_over_time);
+        Message("Saved to " + filename);
+    }
+
+    Message("Done!");
+
+}
+
+
+void relaxTimeDifferentNs() {
+    ForceEngine::softening = 0.00113221;
+
+    std::vector<double> Ns = {400, 2000, 10000, 50000};
+    ParticleSet particles = ParticleSet::load("files/data.txt");
+
+    ForceEngine engine(particles);
+    double dt = engine.crossingTime() / 50; // set by total mass anyway
+    
+    Method method = Method::direct_opt;
+    int N_iter = 500;
+    int N_save = 1;
+    int N_skip = 1;
+
+    // let's estimate how much time this is gonna take
+    Timer timer("OneForce");
+    timer.start();
+    engine.computeForce(Method::direct_opt);
+    timer.stop();
+    double time_one_force = timer.getTimeNs();
+
+    // how many times do we call this function?
+    int N_force_calls = 2 * N_iter * 5; // 5 because 4 from rk4 and 1 for potential; 2 because 1 for 50000 and 1 for all the rest (probably less in reality)
+    double time_total = time_one_force * N_force_calls / 1e9 / 3600; // in seconds
+    std::cout << "Total estimated time: " << time_total << "h" << std::endl;
+
+    // let's evolve our particles for each epsilon and save them!
+    for (int i=0; i<(int)Ns.size(); i++) {
+        int N = Ns[i];
+        Message("Evolving for N = " + std::to_string(Ns[i]));
+        ParticleSet particles_N = particles.slice_m(N); // deep copy
+        ForceEngine engine_N(particles_N);
+        ParticleSet particles_over_time = engine_N.evolve(dt, method, IntegrationMethod::rk4, N_iter, N_save, N_skip, true);
+        std::string filename = getFileName("files/relax/n_particles/n_particles", Ns[i], N_iter, N_save, N_skip, dt, method, IntegrationMethod::rk4);
+        ParticleSet::save(filename, particles_over_time);
+        Message("Saved to " + filename);
+    }
+
+    Message("Done!");
+    
 }
 
 
 
 int main() {
     //simulateMilkyWay();
-    evolveDataTestRelax(Method::direct_opt);
+    //evolveDataTestRelax(Method::tree_quad);
+    //evolveDataTestRelax(Method::tree_mono);
+    //evolveDataTestRelax(Method::direct_opt);
     //testEnergyConservation();
     //computeForcesVariousOpeningAngles();
     //ForceEngine::softening = 1.;
@@ -606,5 +757,11 @@ int main() {
     //treeMonopoleOnData(particles);
     //treeQuadOnData(particles);
     //testMemory();
+    //testSliceMass();
+    //testMethodsPrecision();
+
+    //relaxTimeDifferentEpsilons();
+    //relaxTimeDifferentNs();
+    computeExactForcesOnData(loadData());
     return 0;
 }
